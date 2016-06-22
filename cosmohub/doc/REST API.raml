@@ -1,0 +1,445 @@
+#%RAML 0.8
+title: CosmoHub
+version: 0.1.0
+baseUri: http://api.cosmohub.pic.es
+mediaType: application/json
+protocols: [HTTP]
+
+securitySchemes:
+  - basic_auth:
+      description: >
+        HTTP Basic Authentication as described in
+        [RFC 1945](http://tools.ietf.org/html/rfc1945#section-11) and
+        [RFC 2617](http://tools.ietf.org/html/rfc2617#section-2).
+      type: Basic Authentication
+
+securedBy:
+  - basic_auth
+
+traits:
+  - authenticated:
+      usage: >
+        Apply to any method that requires an authenticated user.
+      
+      responses:
+        401:
+          description: >
+            No user is currently authenticated, or the credentials provided are not valid.
+  
+  - authorized:
+      usage: >
+        Apply to any method that may restrict access to certain authenticated users.
+            
+      responses:
+        403:
+          description: >
+            The authenticated user does not have access to this resource.
+  
+  - parametrized:
+      usage: >
+        Apply to any method that has to parse data provided by the client.
+      
+      responses:
+        400:
+          description: >
+            The request is not valid and could not be processed.
+        404:
+          description: >
+            The requested resource does not exist.
+  
+  - conflictable:
+      usage: >
+        Apply to any method that may cause some conflict in the database.
+      
+      responses:
+        409:
+          description: >
+            The request could not be processed due to a conflict in the database.
+
+/user:
+  displayName: User profile
+  description: >
+    Profile information about the authenticated user.
+  
+  get:
+    description: >
+      Retrieve profile information about the currently authenticated user.
+    
+    is: 
+      - authenticated
+    
+    responses:
+      200:
+        description: >
+          Return profile data of the authenticated user.
+        
+        body:
+          application/json:
+            example: |
+              {
+                "id" : 7,
+                "email" : "address@example.com",
+                "name" :  "John Doe",
+                "groups" : [
+                  "ACME",
+                  "Capsule Corp."
+                ]
+              }
+  patch:
+    description: >
+      Update the details of the currently authenticated user.
+    
+    is:
+      - authenticated
+      - parametrized
+    
+    body:
+      application/json:
+        example: |
+          {
+            "password" : "secret",
+            "name" : "John Doe"
+          }
+    
+    responses:
+      200:
+        description: >
+          Return updated profile data of the authenticated user.
+        
+        body:
+          application/json:
+            example: |
+              {
+                "id" : 7,
+                "email" : "address@example.com",
+                "name" :  "John Doe",
+                "groups" : [
+                  "ACME",
+                  "Capsule Corp."
+                ]
+              }
+  post:
+    description: >
+      Register a new user in the service.
+    
+    securedBy: ['']
+    
+    is:
+      - parametrized
+      - conflictable
+    
+    body:
+      application/json:
+        example: |
+          {
+            "email" : "address@example.com",
+            "password" : "secret",
+            "name" : "John Doe",
+            "groups" : [
+              "ACME",
+              "Capsule Corp."
+            ]
+          }
+    
+    responses:
+      201:
+        description: >
+          The user has been successfully registered.
+        
+        body:
+          application/json:
+            example: |
+              {
+                "id" : 7,
+                "email" : "address@example.com",
+                "name" :  "John Doe",
+                "groups" : [
+                  "ACME",
+                  "Capsule Corp."
+                ]
+              }
+
+/groups:
+  displayName: Groups
+  description: >
+    Set of all the groups available in the service.
+  
+  securedBy: ['']
+  
+  get:
+    description: >
+      Retrieve the list of all the groups available in the service.
+    
+    responses:
+      200:
+        description: >
+          Return a list of group names.
+        
+        body:
+          application/json:
+            example: |
+              [
+                "ACME",
+                "Black Mesa",
+              ]
+    
+
+/catalogs:
+  displayName: Catalogs
+  description: >
+    Set of catalogs available to the authenticated user.
+  
+  get:
+    description: >
+      Retrieve the list of catalogs available to the authenticated user.
+    
+    is: 
+      - authenticated
+    
+    responses:
+      200:
+        description: >
+          Return a list of catalogs
+        
+        body:
+          application/json:
+            example: |
+              [
+                {
+                  "id" : 42,
+                  "name" : "Galaxy catalog",
+                  "description" : "A sample galaxy catalog",
+                  "summary" : "This catalog contains lots of galaxies",
+                  "version" : "v1.0.5",
+                  "date" : "2015-08-09",
+                  "public" : true,
+                  "simulated" : true,
+                },
+                {
+                  "id" : 21,
+                  "name" : "Star catalog",
+                  "date" : "2015-10-24",
+                  "version" : "v2.3.1",
+                  "description" : "A sample star catalog",
+                  "summary" : "This catalog contains lots of stars",
+                  "public" : false,
+                  "simulated" : false,
+                }
+              ]
+  
+  /{id}:
+    description: >
+      Data corresponding to a single catalog, identified by {id}.
+    uriParameters:
+      id:
+        type: integer
+        minimum: 1
+    
+    get:
+      description: >
+        Retrieve information about the catalog identified by the {id} parameter.
+      
+      is: 
+        - authenticated
+        - authorized
+        - parametrized
+      
+      responses:
+        200:
+          description: >
+            Return detailed information about the requested catalog.
+          
+          body:
+            application/json:
+              example: |
+                {
+                  "id" : 42,
+                  "name" : "Sample galaxy catalog",
+                  "date" : "2015-08-09",
+                  "version" : "v1.0.5",
+                  "fields" [
+                    {
+                      "name" : "id",
+                      "type" : "integer",
+                      "comment" : "Unique identifier of this galaxy",
+                      "min" : 1,
+                      "max" : 123456
+                    },
+                    {
+                      "name" : "ra",
+                      "type" : "double",
+                      "comment" : "Right ascension (in degrees)"
+                      "min" : 0,
+                      "max" : 360
+                    },
+                    {
+                      "name" : "dec",
+                      "type" : "double",
+                      "comment" : "Declination (in degrees)"
+                      "min" : -90,
+                      "max" : 90
+                    }
+                  ],
+                  "prebuilts" : [
+                    {
+                      "id" : 21,
+                      "name" : "Full catalog",
+                      "description" : "The entire catalog with all the columns and objects.",
+                      "size" : 2345678
+                    },
+                    {
+                      "id" : 33,
+                      "name" : "Brighter galaxies (mag < 20)",
+                      "description" : "A subset of the full catalog, with only the brighter galaxies.",
+                      "size" : 123456
+                    }
+                  ]
+                }
+
+/prebuilts/{id}:
+  displayName: Prebuilts
+  
+  /download:
+    description: >
+      Raw content fo the prebuilt dataset identified by the {id} parameter.
+    
+    get:
+      description: >
+        Download the requested prebuilt dataset.
+      
+      is: 
+        - authenticated
+        - authorized
+        - parametrized
+      
+      responses:
+        200:
+          description: >
+            Entire contents of the requested dataset.
+          
+          body:
+            application/octet-stream:
+        
+        206:
+          description: >
+            A subset (range) of the requested dataset.
+          
+          body:
+            application/octet-stream:
+  
+  /readme:
+    displayName: Prebuilt
+    description: >
+      Raw content fo the prebuilt README identified by the {id} parameter.
+    
+    get:
+      description: >
+        Download the requested prebuilt README.
+      
+      is: 
+        - authenticated
+        - authorized
+        - parametrized
+      
+      responses:
+        200:
+          description: >
+            Entire contents of the requested README.
+          
+          body:
+            application/octet-stream:
+        
+        206:
+          description: >
+            A subset (range) of the requested README.
+          
+          body:
+            application/octet-stream:
+
+/queries:
+  displayName: Queries
+  description: >
+    Set of queries performed by the authenticated user.
+  
+  get:
+    description: >
+      Retrieve the list of queries performed by the authenticated user.
+    
+    is: 
+      - authenticated
+    
+    responses:
+      200:
+        description: >
+          Return a list of queries
+        
+        body:
+          application/json:
+            example: |
+              [
+                {
+                  "id" : 65,
+                  "status" : "FINISHED",
+                  "created" : "2015-08-09 15:47:56",
+                  "started" : "2015-08-09 15:48:21",
+                  "ended" : "2015-08-09 15:53:26",
+                  "sql" : "SELECT id, ra, dec, FROM acme"  
+                },
+                {
+                  "id" : 67,
+                  "status" : "QUEUED",
+                  "created" : "2015-11-11 11:29:16",
+                  "started" : null,
+                  "ended" : null,
+                  "sql" : "SELECT id, ra, dec, FROM acme WHERE ra < 1.0"  
+                }
+              ]
+  
+  post:
+    description: >
+      Submit a new query for processing.
+    
+    is: 
+      - authenticated
+      - parametrized
+    
+    body:
+      application/json:
+        example: |
+          {
+            "sql" : "SELECT id, ra, dec, FROM acme"
+          }
+    
+    responses:
+      201:
+        description: >
+          The query has been successfully submitted.
+        
+        body:
+          application/json:
+            example: |
+              {
+                "id" : 93
+              }
+  
+  /{id}/download:
+    description: >
+      Raw content fo the custom query results identified by the {id} parameter.
+    
+    is:
+      - authenticated
+      - authorized
+      - parametrized
+    
+    get:
+      description: >
+        Download the requested custom query as a binary stream.
+      
+      responses:
+        200:
+          description: >
+            Requested custom query data.
+        
+        206:
+          description: >
+            Requested custom query ranged data.

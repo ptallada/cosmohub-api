@@ -1,0 +1,9 @@
+config.py
+logging.yaml
+*.py[co]
+/*.project
+/*.pydevproject
+/.settings/
+/dist/
+/*.egg-info/
+
