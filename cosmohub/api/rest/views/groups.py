@@ -1,8 +1,8 @@
 from flask_restful import Resource
 
-from .. import api_rest
-from ... import db, model
-from ...session import transactional_session
+from ...app import db, api_rest
+from ...db import model
+from ...db.session import transactional_session
 
 class GroupCollection(Resource):
     def get(self):

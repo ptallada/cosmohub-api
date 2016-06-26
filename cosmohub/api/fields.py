@@ -1,44 +1,69 @@
 from flask_restful import fields
 
 USER = {
-    'id'     : fields.Integer,
-    'name'   : fields.String,
-    'email'  : fields.String,
-    'groups' : fields.List(fields.String(attribute='name')),
+    'id'         : fields.Integer,
+    'name'       : fields.String,
+    'email'      : fields.String,
+    'is_enabled' : fields.Boolean,
+    'is_admin'   : fields.Boolean,
+    'groups'     : fields.List(fields.String(attribute='name')),
 }
 
 CATALOGS = {
-    'id'          : fields.Integer,
-    'name'        : fields.String,
-    'description' : fields.String,
-    'summary'     : fields.String,
-    'view'        : fields.String,
-    'version'     : fields.String,
-    'date'        : fields.DateTime('iso8601'),
-    'public'      : fields.Boolean,
-    'simulated'   : fields.Boolean,
+    'id'           : fields.Integer,
+    'name'         : fields.String,
+    'version'      : fields.String,
+    'description'  : fields.String,
+    'is_public'    : fields.Boolean,
+    'is_simulated' : fields.Boolean,
+    'ts_released'  : fields.DateTime('iso8601'),
+    'ts_uploaded'  : fields.DateTime('iso8601'),
 }
 
-PREBUILT = {
-    'id'           : fields.Integer,
-    'catalog_id'   : fields.Integer,
-    'name'         : fields.String,
-    'description'  : fields.String,
-    'size'         : fields.Integer,
-    'path_catalog' : fields.String,
-    'path_readme'  : fields.String,
+DATASET = {
+    'id'          : fields.Integer,
+    'name'        : fields.String,
+    'version'     : fields.String,
+    'description' : fields.String,
+    'rows'        : fields.Integer,
+    'recipe'      : fields.Raw,
+    'path_readme' : fields.String,
+    'ts_defined'  : fields.DateTime('iso8601'),
+}
+
+FILE = {
+    'id'            : fields.Integer,
+    'name'          : fields.String,
+    'version'       : fields.String,
+    'description'   : fields.String,
+    'size'          : fields.Integer,
+    'path_readme'   : fields.String,
+    'path_contents' : fields.String,
+    'ts_uploaded'   : fields.DateTime('iso8601'),
 }
 
 CATALOG = CATALOGS.copy()
 CATALOG.update({
-    'prebuilts'   : fields.List(fields.Nested(PREBUILT)),
+    'summary'  : fields.String,
+    'datasets' : fields.List(fields.Nested(DATASET)),
+    'files'    : fields.List(fields.Nested(FILE)),
 })
 
+COLUMN = {
+    'name' : fields.String,
+    'type' : fields.String,
+}
+
 QUERY = {
-    'id'      : fields.Integer,
-    'status'  : fields.String,
-    'created' : fields.DateTime('iso8601', attribute='ts_created'),
-    'started' : fields.DateTime('iso8601', attribute='ts_started'),
-    'ended'   : fields.DateTime('iso8601', attribute='ts_ended'),
-    'sql'     : fields.String,
+    'id'            : fields.Integer,
+    'sql'           : fields.String,
+    'job_id'        : fields.String,
+    'status'        : fields.String,
+    'schema'        : fields.List(fields.Nested(COLUMN)),
+    'rows'          : fields.Integer,
+    'size'          : fields.Integer,
+    'path_contents' : fields.String,
+    'ts_created'    : fields.DateTime('iso8601'),
+    'ts_started'    : fields.DateTime('iso8601'),
+    'ts_finished'   : fields.DateTime('iso8601'),
 }

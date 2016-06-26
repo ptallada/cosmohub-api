@@ -20,6 +20,7 @@ HIVE_METASTORE_URI = 'postgresql://user:password@host:port/database'
 # Hadoop settings
 HADOOP_NAMENODE_URI='http://localhost:50070'
 HADOOP_HDFS_CHUNK_SIZE=16*1024
+DOWNLOADS_BASE_DIR=''
 
 # Logging configuration file location
 LOGCONFIG = "logging.yaml"

@@ -2,6 +2,6 @@ from . import (
     user,
     catalogs,
     groups,
-    prebuilts,
+    downloads,
     queries
 )

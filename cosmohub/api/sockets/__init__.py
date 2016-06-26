@@ -5,10 +5,11 @@ import textwrap
 import time
 import sasl
 
+from flask import current_app
 from pyhive import hive
 
 from . import hive_progress
-from .. import app, ws
+from ..app import ws
 
 def _check_syntax(ws, cursor, sql):
     sql = "SELECT * FROM ( {0} ) AS t LIMIT 0".format(sql)
@@ -89,9 +90,9 @@ def _execute_query(ws, cursor, running, sql):
 @ws.route('/socket')
 def echo_socket(ws):
     cursor = hive.connect(
-        app.config['HIVE_HOST'],
+        current_app.config['HIVE_HOST'],
         username='cosmohub',
-        database=app.config['HIVE_DATABASE']
+        database=current_app.config['HIVE_DATABASE']
     ).cursor()
     
     running = gevent.event.Event()

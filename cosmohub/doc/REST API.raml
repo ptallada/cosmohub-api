@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: CosmoHub
-version: 0.1.0
+version: 0.2.0
 baseUri: http://api.cosmohub.pic.es
 mediaType: application/json
 protocols: [HTTP]
@@ -80,6 +80,8 @@ traits:
                 "id" : 7,
                 "email" : "address@example.com",
                 "name" :  "John Doe",
+                "is_enabled" : true,
+                "is_admin" : true,
                 "groups" : [
                   "ACME",
                   "Capsule Corp."
@@ -113,6 +115,8 @@ traits:
                 "id" : 7,
                 "email" : "address@example.com",
                 "name" :  "John Doe",
+                "is_enabled" : true,
+                "is_admin" : true,
                 "groups" : [
                   "ACME",
                   "Capsule Corp."
@@ -122,7 +126,7 @@ traits:
     description: >
       Register a new user in the service.
     
-    securedBy: ['']
+    securedBy: []
     
     is:
       - parametrized
@@ -153,10 +157,9 @@ traits:
                 "id" : 7,
                 "email" : "address@example.com",
                 "name" :  "John Doe",
-                "groups" : [
-                  "ACME",
-                  "Capsule Corp."
-                ]
+                "is_enabled" : true,
+                "is_admin" : true,
+                "groups" : []
               }
 
 /groups:
@@ -164,7 +167,7 @@ traits:
   description: >
     Set of all the groups available in the service.
   
-  securedBy: ['']
+  securedBy: []
   
   get:
     description: >
@@ -208,22 +211,22 @@ traits:
                 {
                   "id" : 42,
                   "name" : "Galaxy catalog",
-                  "description" : "A sample galaxy catalog",
-                  "summary" : "This catalog contains lots of galaxies",
                   "version" : "v1.0.5",
-                  "date" : "2015-08-09",
-                  "public" : true,
-                  "simulated" : true,
+                  "description" : "A sample galaxy catalog",
+                  "is_public" : true,
+                  "is_simulated" : true,
+                  "ts_released" : null,
+                  "ts_uploaded" : "2015-08-09",
                 },
                 {
                   "id" : 21,
                   "name" : "Star catalog",
-                  "date" : "2015-10-24",
                   "version" : "v2.3.1",
                   "description" : "A sample star catalog",
-                  "summary" : "This catalog contains lots of stars",
-                  "public" : false,
-                  "simulated" : false,
+                  "is_public" : false,
+                  "is_simulated" : false,
+                  "ts_released" : "2015-10-24",
+                  "ts_uploaded" : "2016-05-04",
                 }
               ]
   
@@ -254,10 +257,15 @@ traits:
               example: |
                 {
                   "id" : 42,
-                  "name" : "Sample galaxy catalog",
-                  "date" : "2015-08-09",
+                  "name" : "Galaxy catalog",
                   "version" : "v1.0.5",
-                  "fields" [
+                  "description" : "A sample galaxy catalog",
+                  "summary" : "This galaxy catalog is very interesting. Use it!"
+                  "is_public" : true,
+                  "is_simulated" : true,
+                  "ts_released" : null,
+                  "ts_uploaded" : "2015-08-09",
+                  "columns" [
                     {
                       "name" : "id",
                       "type" : "integer",
@@ -280,32 +288,57 @@ traits:
                       "max" : 90
                     }
                   ],
-                  "prebuilts" : [
+                  "datasets" : [
                     {
                       "id" : 21,
                       "name" : "Full catalog",
+                      "version" : "v1.0",
                       "description" : "The entire catalog with all the columns and objects.",
-                      "size" : 2345678
+                      "rows" : 2345678,
+                      "ts_defined" : "2016-05-08",
+                      "path_readme" : "path/to/some/readme",
+                      "recipe" : {
+                        "sql" : "SELECT * FROM my_catalog"
+                      }
                     },
                     {
                       "id" : 33,
                       "name" : "Brighter galaxies (mag < 20)",
+                      "version" : "v1.0",
                       "description" : "A subset of the full catalog, with only the brighter galaxies.",
-                      "size" : 123456
+                      "rows" : 345678,
+                      "ts_defined" : "2016-01-18",
+                      "path_readme" : "path/to/another/readme",
+                      "recipe" : {
+                        "sql" : "SELECT * FROM my_catalog WHERE my_mag<20"
+                      }
+                    }
+                  ],
+                  "files" : [
+                    {
+                      "id" : 58,
+                      "name" : "Extinction mask",
+                      "version" : "v1.0",
+                      "description" : "A very interesting extinction mask",
+                      "size" : 345678123,
+                      "ts_uploaded" : "2016-01-18",
+                      "path_readme" : "path/to/its/readme",                      
+                      "path_contents" : "path/to/the/actual/mask",
                     }
                   ]
                 }
 
-/prebuilts/{id}:
-  displayName: Prebuilts
+/downloads:
+  displayName: Downloads
+  description: Download readme files, datasets and query results
   
-  /download:
+  /datasets/{id}/readme:
     description: >
-      Raw content fo the prebuilt dataset identified by the {id} parameter.
+      Download the dataset readme identified by the {id} parameter.
     
     get:
       description: >
-        Download the requested prebuilt dataset.
+        Download the requested dataset readme.
       
       is: 
         - authenticated
@@ -315,26 +348,25 @@ traits:
       responses:
         200:
           description: >
-            Entire contents of the requested dataset.
+            Entire contents of the requested dataset readme.
           
           body:
             application/octet-stream:
         
         206:
           description: >
-            A subset (range) of the requested dataset.
+            A subset (range) of the requested dataset readme.
           
           body:
             application/octet-stream:
   
-  /readme:
-    displayName: Prebuilt
+  /queries/{id}/results:
     description: >
-      Raw content fo the prebuilt README identified by the {id} parameter.
+     Download the results of the query identified by the {id} parameter.
     
     get:
       description: >
-        Download the requested prebuilt README.
+        Download the requested query results.
       
       is: 
         - authenticated
@@ -344,14 +376,70 @@ traits:
       responses:
         200:
           description: >
-            Entire contents of the requested README.
+            Entire contents of the requested query results.
           
           body:
             application/octet-stream:
         
         206:
           description: >
-            A subset (range) of the requested README.
+            A subset (range) of the requested query results.
+          
+          body:
+            application/octet-stream:
+  
+  /files/{id}/readme:
+    description: >
+      Raw content fo the file readme identified by the {id} parameter.
+    
+    get:
+      description: >
+        Download the requested file readme.
+      
+      is: 
+        - authenticated
+        - authorized
+        - parametrized
+      
+      responses:
+        200:
+          description: >
+            Entire contents of the requested file readme.
+          
+          body:
+            application/octet-stream:
+        
+        206:
+          description: >
+            A subset (range) of the requested file readme.
+          
+          body:
+            application/octet-stream:
+    
+  /files//{id}/contents:
+    description: >
+      Raw content fo the file identified by the {id} parameter.
+    
+    get:
+      description: >
+        Download the requested file contents.
+      
+      is: 
+        - authenticated
+        - authorized
+        - parametrized
+      
+      responses:
+        200:
+          description: >
+            Entire contents of the requested file contents.
+          
+          body:
+            application/octet-stream:
+        
+        206:
+          description: >
+            A subset (range) of the requested file contents.
           
           body:
             application/octet-stream:
@@ -378,20 +466,48 @@ traits:
             example: |
               [
                 {
-                  "id" : 65,
-                  "status" : "FINISHED",
-                  "created" : "2015-08-09 15:47:56",
-                  "started" : "2015-08-09 15:48:21",
-                  "ended" : "2015-08-09 15:53:26",
-                  "sql" : "SELECT id, ra, dec, FROM acme"  
+                  "id": 1,
+                  "job_id": "application_0001",
+                  "rows": 123,
+                  "schema": [
+                    {
+                      "name": "ra",
+                      "type": "double"
+                    },
+                    {
+                      "name": "dec",
+                      "type": "double"
+                    }
+                  ],
+                  "size": 145236,
+                  "path_contents": "/path/to/contents",
+                  "sql": "SELECT AVG(ra) AS ra, AVG(dec) AS dec FROM micecat_v2_0_2",
+                  "status": "COMPLETED",
+                  "ts_created": "2016-06-25",
+                  "ts_finished": "2016-06-25",
+                  "ts_started": "2016-06-25"
                 },
                 {
-                  "id" : 67,
-                  "status" : "QUEUED",
-                  "created" : "2015-11-11 11:29:16",
-                  "started" : null,
-                  "ended" : null,
-                  "sql" : "SELECT id, ra, dec, FROM acme WHERE ra < 1.0"  
+                  "id": 2,
+                  "job_id": "application_0002",
+                  "rows": 456,
+                  "schema": [
+                    {
+                      "name": "ra",
+                      "type": "double"
+                    },
+                    {
+                      "name": "dec",
+                      "type": "double"
+                    }
+                  ],
+                  "size": 145236,
+                  "path_contents": "/path/to/contents",
+                  "sql": "SELECT ra, dec FROM micecat_v2_0_2 LIMIT 456",
+                  "status": "PENDING",
+                  "ts_created": "2016-06-25",
+                  "ts_finished": null,
+                  "ts_started": null
                 }
               ]
   
@@ -419,27 +535,15 @@ traits:
           application/json:
             example: |
               {
-                "id" : 93
+                "id": 93,
+                "job_id": null,
+                "path_contents": null,
+                "rows": null,
+                "schema": null,
+                "size": null,
+                "sql": "SELECT ra_gal, dec_gal FROM micecat_v2_0_2 LIMIT 20",
+                "status": "PENDING",
+                "ts_created": "2016-06-25",
+                "ts_finished": null,
+                "ts_started": null
               }
-  
-  /{id}/download:
-    description: >
-      Raw content fo the custom query results identified by the {id} parameter.
-    
-    is:
-      - authenticated
-      - authorized
-      - parametrized
-    
-    get:
-      description: >
-        Download the requested custom query as a binary stream.
-      
-      responses:
-        200:
-          description: >
-            Requested custom query data.
-        
-        206:
-          description: >
-            Requested custom query ranged data.

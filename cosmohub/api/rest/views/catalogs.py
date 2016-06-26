@@ -2,24 +2,28 @@ import werkzeug.exceptions as http_exc
 
 from flask import g
 from flask_restful import Resource, marshal
+from sqlalchemy.orm import joinedload
 
-from .. import api_rest
-from ... import app, db, model, fields
+from ... import fields
+from ...app import app, db, api_rest
+from ...db import model
+from ...db.session import transactional_session
 from ...security import auth
-from ...session import transactional_session
 
 class CatalogCollection(Resource):
     decorators = [auth.login_required]
     
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
-            public = session.query(model.Catalog).\
-                filter_by(public = True)
+            public = session.query(model.Catalog).filter_by(
+                is_public = True
+            )
             
-            restricted = session.query(model.Catalog).\
-                join(model.Catalog.groups).\
-                join(model.Group.users).\
-                filter(model.User.id == getattr(g, 'current_user')['id'])
+            restricted = session.query(model.Catalog).join(
+                'groups', 'users'
+            ).filter(
+                model.User.id == getattr(g, 'current_user')['id']
+            )
             
             catalogs = public.union(restricted).all()
             
@@ -32,22 +36,25 @@ class CatalogItem(Resource):
     
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
-            catalog = session.query(model.Catalog).filter_by(id=id_).one()
+            catalog = session.query(model.Catalog).filter_by(
+                id = id_
+            ).options(
+                joinedload('datasets'),
+                joinedload('files')
+            ).one()
             
-            if not catalog.public:
-                catalog = session.query(model.Catalog).\
-                    join(model.Catalog.groups).\
-                    join(model.Group.users).\
-                    filter(
-                        model.Catalog.id == id_,
-                        model.User.id == getattr(g, 'current_user')['id'],
-                    ).first()
+            if not catalog.is_public:
+                user = session.query(model.User).join(
+                    'groups', 'catalogs'
+                ).filter(
+                    model.Catalog.id == id_,
+                    model.User.id == getattr(g, 'current_user')['id'],
+                ).first()
                 
-            if not catalog:
+            if not user:
                 raise http_exc.Forbidden
             
-            columns = app.columns.loc[catalog.view].to_dict('records')
-            
+            columns = app.columns.loc[catalog.relation].to_dict('records')
             data = marshal(catalog, fields.CATALOG)
             data.update({'columns' : columns})
             

@@ -5,10 +5,11 @@ from flask import g
 from flask_restful import Resource, reqparse, marshal
 from sqlalchemy.orm import joinedload
 
-from .. import api_rest
-from ... import db, model, fields
+from ... import fields
+from ...app import db, api_rest
+from ...db import model
+from ...db.session import transactional_session, retry_on_serializable_error
 from ...security import auth
-from ...session import transactional_session, retry_on_serializable_error
 
 log = logging.getLogger(__name__)
 
@@ -22,11 +23,11 @@ class UserItem(Resource):
         @retry_on_serializable_error
         def patch_user(user_id, attrs):
             with transactional_session(db.session) as session:
-                user = session.query(model.User).\
-                    option(
-                        joinedload(model.User.groups)
-                    ).\
-                    filter_by(id=user_id).one()
+                user = session.query(model.User).options(
+                    joinedload('groups')
+                ).filter_by(
+                    id=user_id
+                ).one()
                 
                 for key, value in attrs.iteritems():
                     setattr(user, key, value)
@@ -53,7 +54,10 @@ class UserItem(Resource):
                 if len(groups) != len(attrs['groups']):
                     raise http_exc.BadRequest("One or more of the requested groups does not exist.")
                 
-                attrs['groups'] = set(groups)
+                # Use the all_groups relationship
+                attrs['all_groups'] = attrs['groups']
+                attrs['all_groups'] = set(groups)
+                del attrs['groups']
                 
                 user = model.User(**attrs)
                 session.add(user)

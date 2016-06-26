@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Implement a new data model. (Pau Tallada)
+- Enhance password handling using `passwlib`. (Pau Tallada)
 
 
 ## [0.1.0] - 2016-06-17

@@ -15,7 +15,7 @@ with open(os.path.join(here, 'cosmohub', 'api', 'release.py')) as f:
     exec(f.read(), release)
 
 requires = [
-    'brownthrower',
+    'enum34',
     'gevent',
     'gevent-websocket',
     'flask',
@@ -27,10 +27,13 @@ requires = [
     'flask-logconfig',
     'hdfs',
     'pandas',
+    'passlib',
     'psycogreen',
     'psycopg2',
     'pyhive[hive]',
     'sasl',
+    'sqlalchemy',
+    'sqlalchemy-utils',
 ]
 
 setup(
@@ -47,4 +50,10 @@ setup(
     
     include_package_data=True,
     zip_safe=False,
+    
+    entry_points = {
+        'console_scripts' : [
+            'cosmohub_api_initialize_db = cosmohub.api.scripts.initialize_db:main',
+        ],
+    },
 )

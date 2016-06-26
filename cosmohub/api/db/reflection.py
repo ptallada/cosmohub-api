@@ -3,10 +3,8 @@ import textwrap
 
 from sqlalchemy import create_engine
 
-from . import app
-
-def reflect_catalog_columns():
-    engine = create_engine(app.config['HIVE_METASTORE_URI'])
+def reflect_catalog_columns(metastore_uri, database):
+    engine = create_engine(metastore_uri)
     
     sql = textwrap.dedent("""\
     SELECT
@@ -25,13 +23,13 @@ def reflect_catalog_columns():
         ON cd."CD_ID" = sd."CD_ID"
     LEFT JOIN "TAB_COL_STATS" AS cs
         ON cs."TBL_ID" = tb."TBL_ID" AND cs."COLUMN_NAME" = cd."COLUMN_NAME"
-    WHERE db."NAME" = %(db_name)s
+    WHERE db."NAME" = %(database)s
     ORDER BY tb."TBL_ID", cd."CD_ID", idx
     """)
     
     data = pd.read_sql(
         sql, engine, index_col=['tb_name', 'idx'],
-        params={'db_name' : app.config['HIVE_DATABASE']},
+        params={'database' : database},
     )
     
     # Replace all NaN with nulls to stick to JSON specification
