@@ -141,16 +141,19 @@ class HDFSPathStreamer(object):
                     if not remaining:
                         break
 
-            assert remaining == 0
+            if remaining != 0:
+                raise AssertionError('File size was incorrect!?')
 
     def __len__(self):
         return self._size
 
 class BaseDownload(object):
-    def _headers(self, path):
+    @staticmethod
+    def _headers():
         return Headers()
 
-    def _get_path(self, item):
+    @staticmethod
+    def _get_path(item):
         raise NotImplementedError
 
     def _build_response(self, path, range_header=None, prefix=''):
@@ -176,7 +179,40 @@ class BaseDownload(object):
 
         return response
 
-class FileBaseDownload(BaseDownload, Resource):
+class DatasetReadmeDownload(BaseDownload, Resource):
+    decorators = [auth.login_required]
+
+    @staticmethod
+    def _get_path(item):
+        return item.path_readme
+
+    def get(self, id_):
+        with transactional_session(db.session, read_only=True) as session:
+            dataset = session.query(model.Dataset).options(
+                joinedload('catalog')
+            ).filter_by(
+                id=id_
+            ).one()
+
+            if not dataset.catalog.is_public:
+                user = session.query(model.Dataset).join(
+                    'catalog', 'groups', 'users'
+                ).filter(
+                    model.Dataset.id == id_,
+                    model.User.id == getattr(g, 'current_user')['id'],
+                ).first()
+
+            if not user:
+                raise http_exc.Forbidden
+
+            path = self._get_path(dataset)
+            range_header = request.headers.get('Range', None)
+
+            return self._build_response(path, range_header, prefix='')
+
+api_rest.add_resource(DatasetReadmeDownload, '/downloads/datasets/<int:id_>/readme')
+
+class FileResource(Resource):
     decorators = [auth.login_required]
 
     def get(self, id_):
@@ -208,53 +244,23 @@ class FileBaseDownload(BaseDownload, Resource):
 
             return self._build_response(path, range_header, prefix='')
 
-class DatasetReadmeDownload(BaseDownload, Resource):
-    decorators = [auth.login_required]
-
-    def _get_path(self, item):
-        return item.path_readme
-
-    def get(self, id_):
-        with transactional_session(db.session, read_only=True) as session:
-            dataset = session.query(model.Dataset).options(
-                joinedload('catalog')
-            ).filter_by(
-                id=id_
-            ).one()
-
-            if not dataset.catalog.is_public:
-                user = session.query(model.Dataset).join(
-                    'catalog', 'groups', 'users'
-                ).filter(
-                    model.Dataset.id == id_,
-                    model.User.id == getattr(g, 'current_user')['id'],
-                ).first()
-
-            if not user:
-                raise http_exc.Forbidden
-
-            path = self._get_path(dataset)
-            range_header = request.headers.get('Range', None)
-
-            return self._build_response(path, range_header, prefix='')
-
-api_rest.add_resource(DatasetReadmeDownload, '/downloads/datasets/<int:id_>/readme')
-
-class FileReadmeDownload(FileBaseDownload):
-    def _get_path(self, item):
+class FileReadmeDownload(BaseDownload, FileResource):
+    @staticmethod
+    def _get_path(item):
         return item.path_readme
 
 api_rest.add_resource(FileReadmeDownload, '/downloads/files/<int:id_>/readme')
 
-class FileContentsDownload(FileBaseDownload):
+class FileContentsDownload(BaseDownload, FileResource):
     def _headers(self, path):
-        headers = super(FileContentsDownload, self)._headers(path)
+        headers = super(FileContentsDownload, self)._headers()
         basename = os.path.basename(path)
         headers.add('Content-Disposition', 'attachment', filename=basename)
 
         return headers
 
-    def _get_path(self, item):
+    @staticmethod
+    def _get_path(item):
         return item.path_contents
 
 api_rest.add_resource(FileContentsDownload, '/downloads/files/<int:id_>/contents')
@@ -263,13 +269,14 @@ class QueryDownload(BaseDownload, Resource):
     decorators = [auth.login_required]
 
     def _headers(self, path):
-        headers = super(QueryDownload, self)._headers(path)
+        headers = super(QueryDownload, self)._headers()
         basename = os.path.basename(path) + '.csv.bz2'
         headers.add('Content-Disposition', 'attachment', filename=basename)
 
         return headers
 
-    def _get_path(self, item):
+    @staticmethod
+    def _get_path(item):
         return item.path_contents
 
     def get(self, id_):

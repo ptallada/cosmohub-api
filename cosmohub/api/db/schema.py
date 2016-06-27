@@ -35,10 +35,9 @@ class MetaData(schema.MetaData):
         session.commit()
 
 class DeclarativeMeta(_BoundDeclarativeMeta):
-    def __init__(cls, classname, bases, dict_): # @NoSelf
-        if hasattr(cls, '__table__') and cls.__table__.__doc__:
-            cls.__doc__ = textwrap.dedent(cls.__table__.__doc__)
-        ret = _BoundDeclarativeMeta.__init__(cls, classname, bases, dict_)
-        if hasattr(cls, '__table__') and cls.__doc__:
-            cls.__table__.__doc__ = textwrap.dedent(cls.__doc__)
-        return ret
+    def __init__(self, classname, bases, dict_):
+        if hasattr(self, '__table__') and self.__table__.__doc__:
+            self.__doc__ = textwrap.dedent(self.__table__.__doc__)
+        _BoundDeclarativeMeta.__init__(self, classname, bases, dict_)
+        if hasattr(self, '__table__') and self.__doc__:
+            self.__table__.__doc__ = textwrap.dedent(self.__doc__)

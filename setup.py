@@ -5,14 +5,13 @@ import os
 
 from setuptools import setup
 
-release = {}
+from cosmohub.api.release import __version__
+
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.md')) as f:
     README = f.read()
 with open(os.path.join(here, 'CHANGELOG.md')) as f:
     CHANGES = f.read()
-with open(os.path.join(here, 'cosmohub', 'api', 'release.py')) as f:
-    exec(f.read(), release)
 
 requires = [
     'enum34',
@@ -38,7 +37,7 @@ requires = [
 
 setup(
     name='cosmohub.api',
-    version=release['__version__'],
+    version=__version__,
     description='CosmoHub REST API',
     long_description=README + '\n\n' + CHANGES,
 

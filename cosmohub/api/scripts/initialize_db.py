@@ -71,7 +71,7 @@ def main(args=None):
                 )
 
             except KeyboardInterrupt:
-                print
+                sys.stdout.write('\n')
                 return
             if not ans:
                 return
