@@ -11,20 +11,20 @@ GRAMMAR = PREFIX + pp.OneOrMore(STAGE)
 
 def parse_progress(message):
     done, active, total = (0.0, 0.0, 0.0)
-    
+
     try:
         stages = GRAMMAR.parseString(message)
-        
+
         for stage in stages:
             done += stage[0]
             active += stage[1]
             total += stage[2]
-        
+
         if total > 0:
             done = done*100/float(total)
             active = active*100/float(total)
-    
+
     except pp.ParseException:
         pass
-    
+
     return (done, active)

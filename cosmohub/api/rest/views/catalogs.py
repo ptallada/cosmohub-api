@@ -12,28 +12,28 @@ from ...security import auth
 
 class CatalogCollection(Resource):
     decorators = [auth.login_required]
-    
+
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
             public = session.query(model.Catalog).filter_by(
                 is_public = True
             )
-            
+
             restricted = session.query(model.Catalog).join(
                 'groups', 'users'
             ).filter(
                 model.User.id == getattr(g, 'current_user')['id']
             )
-            
+
             catalogs = public.union(restricted).all()
-            
+
             return marshal(catalogs, fields.CATALOGS)
 
 api_rest.add_resource(CatalogCollection, '/catalogs')
 
 class CatalogItem(Resource):
     decorators = [auth.login_required]
-    
+
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
             catalog = session.query(model.Catalog).filter_by(
@@ -42,7 +42,7 @@ class CatalogItem(Resource):
                 joinedload('datasets'),
                 joinedload('files')
             ).one()
-            
+
             if not catalog.is_public:
                 user = session.query(model.User).join(
                     'groups', 'catalogs'
@@ -50,14 +50,14 @@ class CatalogItem(Resource):
                     model.Catalog.id == id_,
                     model.User.id == getattr(g, 'current_user')['id'],
                 ).first()
-                
+
             if not user:
                 raise http_exc.Forbidden
-            
+
             columns = app.columns.loc[catalog.relation].to_dict('records')
             data = marshal(catalog, fields.CATALOG)
             data.update({'columns' : columns})
-            
+
             return data
 
 api_rest.add_resource(CatalogItem, '/catalogs/<int:id_>')

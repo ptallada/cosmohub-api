@@ -13,9 +13,9 @@ def is_serializable_error(exc):
     Return True if the provided exception is a PostgreSQL serialization error.
     """
     if isinstance(exc, DBAPIError):
-        if hasattr(exc.orig, 'pgcode'): 
+        if hasattr(exc.orig, 'pgcode'):
             return exc.orig.pgcode == '40001'
-    
+
     return False
 
 def retry_on_serializable_error(fn):

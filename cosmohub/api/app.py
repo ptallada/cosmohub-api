@@ -42,7 +42,7 @@ app.columns = reflection.reflect_catalog_columns(
     database=app.config['HIVE_DATABASE'],
 )
 
-# Configure REST API Blueprint 
+# Configure REST API Blueprint
 mod_rest = Blueprint('rest', __name__, url_prefix='/rest')
 api_rest = Api(mod_rest)
 
@@ -53,7 +53,7 @@ ws = Sockets(app)
 @app.errorhandler(NoResultFound)
 def _handle_noresultfound(e):
     log.info('A NoResultFound Exception has been captured', exc_info=True)
-    
+
     return jsonify(
         message = 'One of the requested entities was not found.'
     ), 404
@@ -61,7 +61,7 @@ def _handle_noresultfound(e):
 @app.errorhandler(IntegrityError)
 def _handle_integrityerror(e):
     log.info('An IntegrityError Exception has been captured', exc_info=True)
-    
+
     return jsonify(
         message = 'Some conflict occured while processing the request.'
     ), 409

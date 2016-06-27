@@ -14,7 +14,7 @@ auth = HTTPBasicAuth()
 @auth.verify_password
 def _verify_password(username, password):
     g.current_user = None
-    
+
     with transactional_session(db.session, read_only=False) as session:
         try:
             user = session.query(model.User).options(
@@ -23,10 +23,10 @@ def _verify_password(username, password):
             ).filter_by(
                 email=username
             ).one()
-        
+
         except NoResultFound:
             return None
-        
+
         else:
             g.current_user = marshal(user, fields.USER)
             # CAUTION: Refreshing an old hash requires a writable transaction

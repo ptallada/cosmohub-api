@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 
 def reflect_catalog_columns(metastore_uri, database):
     engine = create_engine(metastore_uri)
-    
+
     sql = textwrap.dedent("""\
     SELECT
         tb."TBL_NAME" as tb_name,
@@ -26,11 +26,11 @@ def reflect_catalog_columns(metastore_uri, database):
     WHERE db."NAME" = %(database)s
     ORDER BY tb."TBL_ID", cd."CD_ID", idx
     """)
-    
+
     data = pd.read_sql(
         sql, engine, index_col=['tb_name', 'idx'],
         params={'database' : database},
     )
-    
+
     # Replace all NaN with nulls to stick to JSON specification
     return data.where(pd.notnull(data), None)

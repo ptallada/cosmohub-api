@@ -26,9 +26,9 @@ class User(db.Model):
         # Unique key
         UniqueConstraint('email'),
     )
-    
+
     _Password = PasswordType(onload=lambda: current_app.config['PASSLIB_CONTEXT'])
-    
+
     # Columns
     _id        = Column('id',         Integer,    nullable=False,                            comment='User unique identifier')
     name       = Column('name',       String(64), nullable=False,                            comment='Full name (for metadata purposes)')
@@ -37,22 +37,22 @@ class User(db.Model):
     is_admin   = Column('is_admin',   Boolean,    nullable=False, default=False,             comment='Whether this User has admin privileges')
     password   = Column('password',   _Password,  nullable=False,                            comment='Password')
     ts_created = Column('ts_created', DateTime,   nullable=False, server_default=func.now(), comment='When this User was created')
-    
+
     # Relationships
     groups = relationship('Group',
         secondary=lambda: ACL.__table__, collection_class=set,
         primaryjoin='and_(User.id==ACL._user_id, ACL.is_granted==True)',
         backref=backref('users', collection_class=set, passive_deletes=True)
     )
-    
+
     all_groups = relationship('Group',
         secondary=lambda: ACL.__table__, collection_class=set,
     )
-    
+
     @hybrid_property
     def id(self):
         return self._id
-    
+
     def __repr__(self):
         return u"%s(id=%s, name=%s, email=%s)" % (
             self.__class__.__name__,
@@ -75,13 +75,13 @@ class ACL(db.Model):
         ForeignKeyConstraint(['user_id'],  ['user.id'],  onupdate='CASCADE', ondelete='CASCADE'),
         ForeignKeyConstraint(['group_id'], ['group.id'], onupdate='CASCADE', ondelete='CASCADE'),
     )
-    
+
     # Columns
     _user_id   = Column('user_id',    Integer,  nullable=False,                            comment='User unique identifier')
     _group_id  = Column('group_id',   Integer,  nullable=False,                            comment='Group unique identifier')
     ts_created = Column('ts_created', DateTime, nullable=False, server_default=func.now(), comment='When this entry was created')
     is_granted = Column('is_granted', Boolean,  nullable=False, default=False,             comment='Whether this User has access to this Group')
-    
+
     def __repr__(self):
         return u"%s(user_id=%s, group_id=%s, is_granted=%s)" % (
             self.__class__.__name__,
@@ -101,16 +101,16 @@ class Group(db.Model):
         # Unique key
         UniqueConstraint('name'),
     )
-    
+
     # Columns
     _id        = Column('id',         Integer,    nullable=False,                            comment='Group unique identifier')
     name       = Column('name',       String(32), nullable=False,                            comment='Name')
     ts_created = Column('ts_created', DateTime,   nullable=False, server_default=func.now(), comment='When this Group was created')
-    
+
     @hybrid_property
     def id(self):
         return self._id
-    
+
     def __repr__(self):
         return u"%s(id=%s, name=%s)" % (
             self.__class__.__name__,
@@ -132,12 +132,12 @@ class GroupCatalog(db.Model):
         ForeignKeyConstraint(['group_id'],   ['group.id'],   onupdate='CASCADE', ondelete='CASCADE'),
         ForeignKeyConstraint(['catalog_id'], ['catalog.id'], onupdate='CASCADE', ondelete='CASCADE'),
     )
-    
+
     # Columns
     _group_id   = Column('group_id',   Integer,  nullable=False,                            comment='Group unique identifier')
     _catalog_id = Column('catalog_id', Integer,  nullable=False,                            comment='Catalog unique identifier')
     ts_created  = Column('ts_created', DateTime, nullable=False, server_default=func.now(), comment='When this entry was created')
-    
+
     def __repr__(self):
         return u"%s(group_id=%s, catalog_id=%s)" % (
             self.__class__.__name__,
@@ -156,7 +156,7 @@ class Catalog(db.Model):
         # Unique keys
         UniqueConstraint('name', 'version'),
     )
-    
+
     # Columns
     _id          = Column('id',           Integer,     nullable=False,                            comment='Catalog unique identifier')
     name         = Column('name',         String(32),  nullable=False,                            comment='Name')
@@ -168,7 +168,7 @@ class Catalog(db.Model):
     is_simulated = Column('is_simulated', Boolean,     nullable=False,                            comment='Whether this Catalog data is simulated')
     ts_released  = Column('ts_released',  Date,        nullable=True,                             comment='When this Catalog was released')
     ts_uploaded  = Column('ts_uploaded',  DateTime,    nullable=False, server_default=func.now(), comment='When this Catalog was uploaded')
-    
+
     # Relationships
     groups = relationship('Group',
         secondary=lambda: GroupCatalog.__table__, collection_class=set,
@@ -178,11 +178,11 @@ class Catalog(db.Model):
         secondary=lambda: VAD.__table__, collection_class=set,
         backref=backref('catalogs', collection_class=set, passive_deletes=True)
     )
-    
+
     @hybrid_property
     def id(self):
         return self._id
-    
+
     def __repr__(self):
         return u"%s(id=%s, name=%s, version=%s)" % (
             self.__class__.__name__,
@@ -202,7 +202,7 @@ class Dataset(db.Model):
         # Foreign keys
         ForeignKeyConstraint(['catalog_id'], ['catalog.id'], onupdate='CASCADE', ondelete='CASCADE'),
     )
-    
+
     # Columns
     _id         = Column('id',          Integer,     nullable=False,                            comment='Unique identifier')
     _catalog_id = Column('catalog_id',  Integer,     nullable=False,                            comment='Catalog unique identifier')
@@ -213,20 +213,20 @@ class Dataset(db.Model):
     recipe      = Column('recipe',      JSON,        nullable=False,                            comment='Machine-readable instructions to reconstruct this Dataset.')
     path_readme = Column('path_readme', Text,        nullable=False,                            comment='Relative path to the README file')
     ts_defined  = Column('ts_uploaded', DateTime,    nullable=False, server_default=func.now(), comment='When this Dataset was defined')
-    
+
     # Relationships
     catalog = relationship('Catalog',
         backref=backref('datasets', collection_class=set, passive_deletes=True)
     )
-    
+
     @hybrid_property
     def id(self):
         return self._id
-    
+
     @hybrid_property
     def catalog_id(self):
         return self._catalog_id
-    
+
     def __repr__(self):
         return u"%s(id=%s, catalog_id=%s, name=%s, version=%s)" % (
             self.__class__.__name__,
@@ -249,16 +249,16 @@ class Query(db.Model):
         # Foreign keys
         ForeignKeyConstraint(['user_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
     )
-    
+
     class Status(enum.Enum):
         PREP      = 'PREP'
         RUNNING   = 'RUNNING'
         SUCCEEDED = 'SUCCEEDED'
         FAILED    = 'FAILED'
         KILLED    = 'KILLED'
-    
+
     _StatusType = Enum(*[s.name for s in Status], name='ty__query__status')
-    
+
     # Columns
     _id           = Column('id',            Integer,     nullable=False,                            comment='Query unique identifier')
     _user_id      = Column('user_id',       Integer,     nullable=False,                            comment='User unique identifier')
@@ -272,20 +272,20 @@ class Query(db.Model):
     ts_created    = Column('ts_created',    DateTime,    nullable=False, server_default=func.now(), comment='When this Query was created')
     ts_started    = Column('ts_started',    DateTime,    nullable=True,                             comment='When this Query execution started')
     ts_finished   = Column('ts_finished',   DateTime,    nullable=True,                             comment='When this Query execution finished')
-    
+
     # Relationships
     user = relationship('User',
         backref=backref('queries', collection_class=set, passive_deletes=True)
     )
-    
+
     @hybrid_property
     def id(self):
         return self._id
-    
+
     @hybrid_property
     def user_id(self):
         return self._user_id
-    
+
     def __repr__(self):
         return u"%s(id=%s, user_id=%s, job_id=%s, sql=%s)" % (
             self.__class__.__name__,
@@ -294,7 +294,7 @@ class Query(db.Model):
             repr(self.job_id),
             repr(self.sql),
         )
-    
+
 class VAD(db.Model):
     """\
     Many-to-many between Catalog and File
@@ -309,12 +309,12 @@ class VAD(db.Model):
         ForeignKeyConstraint(['catalog_id'], ['catalog.id'], onupdate='CASCADE', ondelete='CASCADE'),
         ForeignKeyConstraint(['file_id'],    ['file.id'],    onupdate='CASCADE', ondelete='CASCADE'),
     )
-    
+
     # Columns
     _catalog_id = Column('catalog_id', Integer,  nullable=False,                            comment='Catalog unique identifier')
     _file_id    = Column('file_id',    Integer,  nullable=False,                            comment='File unique identifier')
     ts_created  = Column('ts_created', DateTime, nullable=False, server_default=func.now(), comment='When this File was associated with this Catalog')
-    
+
     def __repr__(self):
         return u"%s(catalog_id=%s, file_id=%s)" % (
             self.__class__.__name__,
@@ -333,7 +333,7 @@ class File(db.Model):
         # Unique key
         UniqueConstraint('name', 'version'),
     )
-    
+
     # Columns
     _id           = Column('id',            Integer,     nullable=False,                            comment='File unique identifier')
     name          = Column('name',          String(32),  nullable=False,                            comment='Name')
@@ -343,11 +343,11 @@ class File(db.Model):
     path_readme   = Column('path_readme',   Text,        nullable=False,                            comment='Relative path to its README file')
     path_contents = Column('path_contents', Text,        nullable=False,                            comment='Relative path to the actual contents')
     ts_uploaded   = Column('ts_uploaded',   DateTime,    nullable=False, server_default=func.now(), comment='When this File was uploaded')
-    
+
     @hybrid_property
     def id(self):
         return self._id
-    
+
     def __repr__(self):
         return u"%s(id=%s, name=%s, version=%s)" % (
             self.__class__.__name__,

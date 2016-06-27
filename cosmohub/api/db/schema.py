@@ -19,10 +19,10 @@ class Column(schema.Column):
 class MetaData(schema.MetaData):
     def create_all(self, bind=None, *args, **kwargs):
         super(MetaData, self).create_all(bind, *args, **kwargs)
-        
+
         if bind is None:
             bind = schema._bind_or_error(self)
-        
+
         session = sessionmaker(bind)()
         for t in self.sorted_tables:
             if t.__doc__:
