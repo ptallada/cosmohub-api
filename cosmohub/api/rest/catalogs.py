@@ -1,14 +1,15 @@
 import werkzeug.exceptions as http_exc
 
-from flask import g
+from flask import g, current_app
 from flask_restful import Resource, marshal
 from sqlalchemy.orm import joinedload
 
-from ... import fields
-from ...app import app, db, api_rest
-from ...db import model
-from ...db.session import transactional_session
-from ...security import auth
+from cosmohub.api import db, api_rest
+
+from .. import fields
+from ..db import model
+from ..db.session import transactional_session
+from ..security import auth
 
 class CatalogCollection(Resource):
     decorators = [auth.login_required]
@@ -51,10 +52,10 @@ class CatalogItem(Resource):
                     model.User.id == getattr(g, 'current_user')['id'],
                 ).first()
 
-            if not user:
-                raise http_exc.Forbidden
+                if not user:
+                    raise http_exc.Forbidden
 
-            columns = app.columns.loc[catalog.relation].to_dict('records')
+            columns = current_app.columns.loc[catalog.relation].to_dict('records')
             data = marshal(catalog, fields.CATALOG)
             data.update({'columns' : columns})
 

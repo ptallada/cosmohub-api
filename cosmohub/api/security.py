@@ -4,8 +4,9 @@ from flask_restful import marshal
 from sqlalchemy.orm import joinedload, undefer_group
 from sqlalchemy.orm.exc import NoResultFound
 
+from cosmohub.api import db
+
 from . import fields
-from .app import db
 from .db import model
 from .db.session import transactional_session
 

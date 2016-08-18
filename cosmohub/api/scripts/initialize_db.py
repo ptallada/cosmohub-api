@@ -57,8 +57,8 @@ def main(args=None):
 
     options = _parse_args(args)
 
-    from cosmohub.api.main import app, db
-
+    from cosmohub.api import app, db
+    
     with app.app_context():
         if options.pop('drop_all'):
             try:

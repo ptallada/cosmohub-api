@@ -44,6 +44,7 @@ FILE = {
 
 CATALOG = CATALOGS.copy()
 CATALOG.update({
+    'relation' : fields.String,
     'summary'  : fields.String,
     'datasets' : fields.List(fields.Nested(DATASET)),
     'files'    : fields.List(fields.Nested(FILE)),
@@ -55,15 +56,13 @@ COLUMN = {
 }
 
 QUERY = {
-    'id'            : fields.Integer,
-    'sql'           : fields.String,
-    'job_id'        : fields.String,
-    'status'        : fields.String,
-    'schema'        : fields.List(fields.Nested(COLUMN)),
-    'rows'          : fields.Integer,
-    'size'          : fields.Integer,
-    'path_contents' : fields.String,
-    'ts_created'    : fields.DateTime('iso8601'),
-    'ts_started'    : fields.DateTime('iso8601'),
-    'ts_finished'   : fields.DateTime('iso8601'),
+    'id'           : fields.Integer,
+    'sql'          : fields.String,
+    'format'       : fields.String,
+    'status'       : fields.String,
+    'job_id'       : fields.String,
+    'size'         : fields.Integer,
+    'ts_submitted' : fields.DateTime('iso8601'),
+    'ts_started'   : fields.DateTime('iso8601'),
+    'ts_finished'  : fields.DateTime('iso8601'),
 }

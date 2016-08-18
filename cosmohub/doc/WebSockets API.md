@@ -1,16 +1,15 @@
 # CosmoHub WebSocket API
+This document describes the message-passing interface for all the CosmoHub WebSockets endpoints.
 
-This document describes the message-passing interface for the CosmoHub WebSockets service.
-
-## Operations
-This service offers the user the ability to perform the following operations:
+## /sockets/catalog
+This service offers the user the ability to perform the following operations on a catalog:
  * __Syntax check__: Check the syntax and retrieve the columns returned by an arbitrary query.
  * __Execute query__: Run a query asynchronously, while receiving periodic progress reports.
  * __Cancel query__: Abort the execution of an in-progress query.
 
 After connecting to the service, the user can submit an operation request using a JSON message. If the message sent is invalid or some unrecoverable error happens during the processing, the connection will be immediately closed. Concurrent execution of multiple operations is **not supported**.
 
-## State Machine
+### State Machine
 The service is implemented as state machine with 3 different states: `SYNTAX`, `READY` and `RUNNING`. The starting state is `READY`.
 The diagram below illustrates the different states and the transitions between them, triggered by the user requests.
 
@@ -24,9 +23,9 @@ The diagram below illustrates the different states and the transitions between t
        ^----- syntax -----+     ^----- query ------+       ^-----+
 ```
 
-## Examples
-### Check syntax of a valid query
-#### Request
+### Examples
+#### Check syntax of a valid query
+##### Request
 ```json
 {
     "type" : "syntax",
@@ -35,7 +34,7 @@ The diagram below illustrates the different states and the transitions between t
     }
 }
 ```
-#### Response
+##### Response
 ```json
 {
     "type" : "syntax",
@@ -45,8 +44,8 @@ The diagram below illustrates the different states and the transitions between t
 }
 ```
 
-### Check syntax of an invalid query
-#### Request
+#### Check syntax of an invalid query
+##### Request
 ```json
 {
     "type" : "syntax",
@@ -55,7 +54,7 @@ The diagram below illustrates the different states and the transitions between t
     }
 }
 ```
-#### Response
+##### Response
 ```json
 {
     "type" : "syntax",
@@ -64,8 +63,8 @@ The diagram below illustrates the different states and the transitions between t
     }
 }
 ```
-### Execute a query
-#### Request
+#### Execute a query
+##### Request
 ```json
 {
     "type" : "query",
@@ -74,16 +73,21 @@ The diagram below illustrates the different states and the transitions between t
     }
 }
 ```
-#### Progress response
+##### Progress response
+Returns a tuple with 4 integer corresponding to the number of jobs:
+ - completed successfully
+ - currently running
+ - failed attempts
+ - pending execution
 ```json
 {
     "type" : "progress",
     "data" : {
-        "progress" : [ 15.43876, 42.00519 ]
+        "progress" : [ 25, 5, 2, 50 ]
     }
 }
 ```
-#### Response
+##### Response
 ```json
 {
     "type" : "query",
@@ -97,11 +101,27 @@ The diagram below illustrates the different states and the transitions between t
 }
 ```
 
-### Cancel a running query
-#### Request
+#### Cancel a running query
+##### Request
 ```json
 {
     "type" : "cancel"
 }
 ```
+## /sockets/queries
+This service offers continuous updates of the status of the queries.
 
+After establishing the connection, the user will receive periodic status updates for her running queries. Each status update is a list of dictionaries, each one of them contains the query ID and its completed percentage.
+
+##### Periodic response
+```json
+{
+    "type" : "progress",
+    "data" : [
+        {
+            "query_id" : 42,
+            "percent_completed" : 85 
+        }
+    ]
+}
+```

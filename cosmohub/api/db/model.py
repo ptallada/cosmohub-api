@@ -4,13 +4,14 @@ from flask import current_app
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint, UniqueConstraint
+from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint, UniqueConstraint, Index
 from sqlalchemy.sql import func
 from sqlalchemy.types import BigInteger, Boolean, Date, DateTime, Enum, Integer, String, Text
 from sqlalchemy_utils import PasswordType, force_auto_coercion
 
 from .schema import Column
-from ..app import db
+
+from cosmohub.api import db
 
 # Required for PasswordType
 force_auto_coercion()
@@ -246,32 +247,42 @@ class Query(db.Model):
         PrimaryKeyConstraint('id'),
         # Unique keys
         UniqueConstraint('job_id'),
+        # Indexes
+        Index('ix__query__user_id__status__ts_submitted', 'user_id', 'status', 'ts_submitted'),
         # Foreign keys
         ForeignKeyConstraint(['user_id'], ['user.id'], onupdate='CASCADE', ondelete='CASCADE'),
     )
 
     class Status(enum.Enum):
-        PREP      = 'PREP'
-        RUNNING   = 'RUNNING'
+        PREP      = 'PROCESSING'
+        RUNNING   = 'PROCESSING'
         SUCCEEDED = 'SUCCEEDED'
         FAILED    = 'FAILED'
         KILLED    = 'KILLED'
+        UNKNOWN   = 'UNKNOWN'
+        
+        def is_final(self):
+            return self in (
+                self.SUCCEEDED,
+                self.FAILED,
+                self.KILLED,
+                self.UNKNOWN,
+            )
 
-    _StatusType = Enum(*[s.name for s in Status], name='ty__query__status')
+    _StatusType = Enum(*[s.value for s in Status], name='ty__query__status')
 
     # Columns
-    _id           = Column('id',            Integer,     nullable=False,                            comment='Query unique identifier')
-    _user_id      = Column('user_id',       Integer,     nullable=False,                            comment='User unique identifier')
-    job_id        = Column('job_id',        String(32),  nullable=True,                             comment='Job unique identifier (external)')
-    status        = Column('status',        _StatusType, nullable=False, default=Status.PREP.value, comment='Status')
-    sql           = Column('sql',           Text,        nullable=False,                            comment='SQL statement')
-    schema        = Column('schema',        JSON,        nullable=True,                             comment='Mapping of columns and types present in this Query')
-    rows          = Column('rows',          Integer,     nullable=True,                             comment='Number of rows')
-    size          = Column('size',          BigInteger,  nullable=True,                             comment='Size in bytes')
-    path_contents = Column('path_contents', Text,        nullable=True,                             comment='Relative path to the actual contents')
-    ts_created    = Column('ts_created',    DateTime,    nullable=False, server_default=func.now(), comment='When this Query was created')
-    ts_started    = Column('ts_started',    DateTime,    nullable=True,                             comment='When this Query execution started')
-    ts_finished   = Column('ts_finished',   DateTime,    nullable=True,                             comment='When this Query execution finished')
+    _id               = Column('id',                Integer,     nullable=False,                            comment='Unique identifier')
+    _user_id          = Column('user_id',           Integer,     nullable=False,                            comment='User unique identifier')
+    sql               = Column('sql',               Text,        nullable=False,                            comment='SQL statement')
+    format            = Column('format',            String(8),   nullable=False,                            comment='Record serialization format')
+    status            = Column('status',            _StatusType, nullable=False, default='PROCESSING',      comment='Status')
+    job_id            = Column('job_id',            String(32),  nullable=True,                             comment='Job unique identifier (external)')
+    schema            = Column('schema',            JSON,        nullable=True,                             comment='Mapping of columns and types present in this Query')
+    size              = Column('size',              BigInteger,  nullable=True,                             comment='Size in bytes')
+    ts_submitted      = Column('ts_submitted',      DateTime,    nullable=False, server_default=func.now(), comment='When this Query was submitted for execution')
+    ts_started        = Column('ts_started',        DateTime,    nullable=True,                             comment='When this Query execution started')
+    ts_finished       = Column('ts_finished',       DateTime,    nullable=True,                             comment='When this Query execution finished')
 
     # Relationships
     user = relationship('User',
@@ -287,11 +298,12 @@ class Query(db.Model):
         return self._user_id
 
     def __repr__(self):
-        return u"%s(id=%s, user_id=%s, job_id=%s, sql=%s)" % (
+        return u"%s(id=%s, user_id=%s, job_id=%s, status=%s, sql=%s)" % (
             self.__class__.__name__,
             repr(self.id),
             repr(self.user_id),
             repr(self.job_id),
+            repr(self.status),
             repr(self.sql),
         )
 

@@ -260,7 +260,8 @@ traits:
                   "name" : "Galaxy catalog",
                   "version" : "v1.0.5",
                   "description" : "A sample galaxy catalog",
-                  "summary" : "This galaxy catalog is very interesting. Use it!"
+                  "summary" : "This galaxy catalog is very interesting. Use it!",
+                  "relation" : "my_table_or_view",
                   "is_public" : true,
                   "is_simulated" : true,
                   "ts_released" : null,
@@ -416,7 +417,7 @@ traits:
           body:
             application/octet-stream:
     
-  /files//{id}/contents:
+  /files/{id}/contents:
     description: >
       Raw content fo the file identified by the {id} parameter.
     
@@ -466,48 +467,26 @@ traits:
             example: |
               [
                 {
+                  "format": "csv.bz2",
                   "id": 1,
-                  "job_id": "application_0001",
-                  "rows": 123,
-                  "schema": [
-                    {
-                      "name": "ra",
-                      "type": "double"
-                    },
-                    {
-                      "name": "dec",
-                      "type": "double"
-                    }
-                  ],
-                  "size": 145236,
-                  "path_contents": "/path/to/contents",
-                  "sql": "SELECT AVG(ra) AS ra, AVG(dec) AS dec FROM micecat_v2_0_2",
-                  "status": "COMPLETED",
-                  "ts_created": "2016-06-25",
-                  "ts_finished": "2016-06-25",
-                  "ts_started": "2016-06-25"
+                  "job_id": "job_1471435183327_0017",
+                  "size": 37894496,
+                  "sql": "SELECT * FROM des_sva1_gold_v1_0_0 TABLESAMPLE (BUCKET 1 OUT OF 256)",
+                  "status": "SUCCEEDED",
+                  "ts_finished": "2016-08-18T12:36:16.759000",
+                  "ts_started": "2016-08-18T12:35:15.850000",
+                  "ts_submitted": "2016-08-18T10:35:02.965074"
                 },
                 {
-                  "id": 2,
-                  "job_id": "application_0002",
-                  "rows": 456,
-                  "schema": [
-                    {
-                      "name": "ra",
-                      "type": "double"
-                    },
-                    {
-                      "name": "dec",
-                      "type": "double"
-                    }
-                  ],
-                  "size": 145236,
-                  "path_contents": "/path/to/contents",
-                  "sql": "SELECT ra, dec FROM micecat_v2_0_2 LIMIT 456",
-                  "status": "PENDING",
-                  "ts_created": "2016-06-25",
-                  "ts_finished": null,
-                  "ts_started": null
+                  "format": "fits",
+                  "id": 3,
+                  "job_id": "job_1471435183327_0019",
+                  "size": 43771894,
+                  "sql": "SELECT ra, dec FROM des_sva1_gold_v1_0_0 LIMIT 20",
+                  "status": "SUCCEEDED",
+                  "ts_finished": "2016-08-18T12:36:16.759000",
+                  "ts_started": "2016-08-18T12:35:15.850000",
+                  "ts_submitted": "2016-08-18T10:35:02.965074"
                 }
               ]
   

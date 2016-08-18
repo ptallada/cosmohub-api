@@ -5,11 +5,12 @@ from flask import g
 from flask_restful import Resource, reqparse, marshal
 from sqlalchemy.orm import joinedload
 
-from ... import fields
-from ...app import db, api_rest
-from ...db import model
-from ...db.session import transactional_session, retry_on_serializable_error
-from ...security import auth
+from cosmohub.api import db, api_rest
+
+from .. import fields
+from ..db import model
+from ..db.session import transactional_session, retry_on_serializable_error
+from ..security import auth
 
 log = logging.getLogger(__name__)
 

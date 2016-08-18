@@ -14,6 +14,8 @@ with open(os.path.join(here, 'CHANGELOG.md')) as f:
     CHANGES = f.read()
 
 requires = [
+    'asdf',
+    'astropy',
     'enum34',
     'gevent',
     'gevent-websocket',
@@ -24,12 +26,12 @@ requires = [
     'flask-sockets',
     'flask-sqlalchemy',
     'flask-logconfig',
-    'hdfs',
     'pandas',
     'passlib',
     'psycogreen',
     'psycopg2',
     'pyhive[hive]',
+    'pyhdfs',
     'sasl',
     'sqlalchemy',
     'sqlalchemy-utils',
@@ -54,5 +56,10 @@ setup(
         'console_scripts' : [
             'cosmohub_api_initialize_db = cosmohub.api.scripts.initialize_db:main',
         ],
+        'cosmohub_format' : [
+            'csv.bz2 = cosmohub.api.io.format.csv_bz2:CsvBz2File',
+            'fits = cosmohub.api.io.format.fits:FitsFile',
+            'asdf = cosmohub.api.io.format.asdf:AsdfFile',
+        ]
     },
 )

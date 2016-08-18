@@ -1,8 +1,9 @@
 from flask_restful import Resource
 
-from ...app import db, api_rest
-from ...db import model
-from ...db.session import transactional_session
+from cosmohub.api import db, api_rest
+
+from ..db import model
+from ..db.session import transactional_session
 
 class GroupCollection(Resource):
     def get(self):
