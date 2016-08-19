@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Fixed
+- Return partitioned table statistics. (Pau Tallada)
+
 ### Added
 - Return total number of rows of a catalog. (Pau Tallada)
 
