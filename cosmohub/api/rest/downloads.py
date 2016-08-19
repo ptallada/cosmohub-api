@@ -133,8 +133,8 @@ class DatasetReadmeDownload(BaseDownload, Resource):
                     model.User.id == getattr(g, 'current_user')['id'],
                 ).first()
 
-            if not user:
-                raise http_exc.Forbidden
+                if not user:
+                    raise http_exc.Forbidden
 
             range_header = request.headers.get('Range', None)
             path = self._get_path(dataset)
@@ -168,8 +168,8 @@ class FileResource(Resource):
                     model.User.id == getattr(g, 'current_user')['id'],
                 ).first()
 
-            if not user:
-                raise http_exc.Forbidden
+                if not user:
+                    raise http_exc.Forbidden
             
             range_header = request.headers.get('Range', None)
             path = self._get_path(file_)

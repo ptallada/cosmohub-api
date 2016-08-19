@@ -112,8 +112,8 @@ class QueryCallback(Resource):
                     id=id_,
                 ).with_for_update().one()
                 
-                #if model.Query.Status[query.status].is_final():
-                #    return
+                if model.Query.Status(query.status).is_final():
+                    return
                 
                 status = hive_rest.status(query.job_id)
                 
