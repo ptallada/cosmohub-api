@@ -4,9 +4,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+
+
+## [1.0.0] - 2016-08-19
 ### Added
 - Implement a new data model. (Pau Tallada)
 - Enhance password handling using `passwlib`. (Pau Tallada)
+
+### Fixed
+- Speed up downloads using prefetching greenlets. (Pau Tallada)
 
 
 ## [0.1.0] - 2016-06-17

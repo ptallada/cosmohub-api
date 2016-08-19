@@ -1,3 +1,4 @@
+import gevent.queue
 import io
 import mimetypes
 import os
@@ -31,10 +32,21 @@ def create_content_range(range_header, length):
 
     return range_.make_content_range(length)
 
-def range_iter(fd, start, stop, chunk_size):
+def range_iter(fd, start, stop, chunk_size, buffer_size):
+    buffer_ = gevent.queue.Queue(maxsize=buffer_size)
+    
+    def prereader():
+        while True:
+            chunk = fd.read(chunk_size)
+            if chunk:
+                buffer_.put(chunk)
+            else:
+                break
+    
     pos = fd.seek(start)
+    gevent.spawn(prereader)
     while pos < stop:
-        chunk = fd.read(chunk_size)
+        chunk = buffer_.get()
         
         if pos + len(chunk) > stop:
             chunk = chunk[:stop-pos]
@@ -71,13 +83,25 @@ class BaseDownload(object):
             try:
                 content_range = create_content_range(range_header, content_length)
                 headers.add('Content-Range', content_range.to_header())
-                data = range_iter(reader, content_range.start, content_range.stop, current_app.config['HADOOP_HDFS_CHUNK_SIZE'])
+                data = range_iter(
+                    reader, 
+                    content_range.start,
+                    content_range.stop,
+                    current_app.config['HADOOP_HDFS_CHUNK_SIZE'],
+                    current_app.config['HADOOP_HDFS_BUFFER_SIZE']
+                )
                 content_length = content_range.stop - content_range.start
                 http_code = 206
             except IndexError:
                 raise http_exc.RequestedRangeNotSatisfiable("Cannot satisfy requested range")
         else:
-            data = range_iter(reader, 0, content_length, current_app.config['HADOOP_HDFS_CHUNK_SIZE'])
+            data = range_iter(
+                reader,
+                0,
+                content_length,
+                current_app.config['HADOOP_HDFS_CHUNK_SIZE'],
+                current_app.config['HADOOP_HDFS_BUFFER_SIZE']
+            )
             http_code = 200
 
         response = Response(data, http_code, mimetype=content_type)

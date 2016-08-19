@@ -14,6 +14,7 @@ LOGCONFIG = "logging.yaml"
 # Hadoop settings
 HADOOP_NAMENODES = ['localhost:50070']
 HADOOP_HDFS_CHUNK_SIZE = 16*1024
+HADOOP_HDFS_BUFFER_SIZE = 4
 
 # Hive database settings
 HIVE_HOST = 'localhost'
