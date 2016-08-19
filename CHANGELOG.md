@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Return total number of rows of a catalog. (Pau Tallada)
 
 
 ## [1.0.0] - 2016-08-19

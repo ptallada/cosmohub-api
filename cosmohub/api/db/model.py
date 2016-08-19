@@ -165,6 +165,7 @@ class Catalog(db.Model):
     description  = Column('description',  String(256), nullable=False,                            comment='Short description')
     summary      = Column('summary',      Text,        nullable=False,                            comment='Long description')
     relation     = Column('relation',     String(32),  nullable=False,                            comment='Relation in Hive that contains the data')
+    rows         = Column('rows',         BigInteger,  nullable=False,                            comment='Total number of rows')
     is_public    = Column('is_public',    Boolean,     nullable=False, default=False,             comment='Whether this Catalog is accessible to anyone')
     is_simulated = Column('is_simulated', Boolean,     nullable=False,                            comment='Whether this Catalog data is simulated')
     ts_released  = Column('ts_released',  Date,        nullable=True,                             comment='When this Catalog was released')

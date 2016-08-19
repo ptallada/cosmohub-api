@@ -45,6 +45,7 @@ FILE = {
 CATALOG = CATALOGS.copy()
 CATALOG.update({
     'relation' : fields.String,
+    'rows'     : fields.Integer,
     'summary'  : fields.String,
     'datasets' : fields.List(fields.Nested(DATASET)),
     'files'    : fields.List(fields.Nested(FILE)),
