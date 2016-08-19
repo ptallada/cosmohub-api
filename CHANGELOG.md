@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Fixed
 - Return partitioned table statistics. (Pau Tallada)
+- Store query start and finish time in UTC. (Pau Tallada)
 
 ### Added
 - Return total number of rows of a catalog. (Pau Tallada)

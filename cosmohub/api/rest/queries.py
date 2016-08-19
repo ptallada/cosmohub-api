@@ -122,8 +122,8 @@ class QueryCallback(Resource):
                 
                 # Update query columns upon completion
                 query.status = model.Query.Status[status['status']['state']].value
-                query.ts_started = datetime.fromtimestamp(status['status']['startTime']/1000.)
-                query.ts_finished = datetime.fromtimestamp(status['status']['finishTime']/1000.)
+                query.ts_started = datetime.utcfromtimestamp(status['status']['startTime']/1000.)
+                query.ts_finished = datetime.utcfromtimestamp(status['status']['finishTime']/1000.)
                 query.exit_code = int(status['exitValue'])
                 
                 if query.exit_code != 0:
