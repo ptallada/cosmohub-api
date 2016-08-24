@@ -9,8 +9,13 @@ DONE = COUNT_OR_UNDEF
 TOTAL = COUNT_OR_UNDEF
 
 ACTIVE = pp.Suppress('+') + COUNTER
-FAILED = pp.Suppress(',-') + COUNTER
-ACTIVE_AND_FAILED = pp.Optional(pp.Suppress('(') + ACTIVE, default=0) + pp.Optional(FAILED, default=0) + pp.Optional(pp.Suppress(')'))
+FAILED = pp.Suppress('-') + COUNTER
+
+OPEN = pp.Optional(pp.Suppress('('))
+CLOSE = pp.Optional(pp.Suppress(')'))
+COMMA = pp.Optional(pp.Suppress(','))
+
+ACTIVE_AND_FAILED =OPEN + pp.Optional(ACTIVE, default=0) + COMMA + pp.Optional(FAILED, default=0) + CLOSE
 
 PROGRESS = pp.Group(DONE + ACTIVE_AND_FAILED + pp.Suppress('/') + TOTAL)
 
