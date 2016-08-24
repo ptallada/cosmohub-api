@@ -10,7 +10,7 @@ from werkzeug import exceptions as http_exc
 
 from cosmohub.api import db, api_rest
 
-from .. import fields
+from ..marshal import schema
 from ..db import model
 from ..db.session import transactional_session, retry_on_serializable_error
 from ..io.hdfs import HDFSPathReader
@@ -28,7 +28,7 @@ class QueryCollection(Resource):
                 model.User.id == getattr(g, 'current_user')['id'],
             ).all()
 
-            return marshal(queries, fields.QUERY)
+            return marshal(queries, schema.Query)
 
     def post(self):
         @retry_on_serializable_error
@@ -65,7 +65,7 @@ class QueryCollection(Resource):
                         callback_url = api_rest.url_for(QueryCallback, id_=query.id, _external=True)
                     )
                     
-                    return marshal(query, fields.QUERY)
+                    return marshal(query, schema.Query)
             
             except:
                 try:

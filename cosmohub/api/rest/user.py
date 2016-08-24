@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from cosmohub.api import db, api_rest
 
-from .. import fields
+from ..marshal import schema
 from ..db import model
 from ..db.session import transactional_session, retry_on_serializable_error
 from ..security import auth_required, PRIV_USER, PRIV_FRESH_LOGIN, PRIV_RESET_PASSWORD
@@ -24,7 +24,7 @@ class UserItem(Resource):
                     id=getattr(g, 'current_user')['id']
                 ).one()
 
-            return marshal(user, fields.USER)
+            return marshal(user, schema.User)
 
     @auth_required( (PRIV_USER & PRIV_FRESH_LOGIN) | PRIV_RESET_PASSWORD )
     def patch(self):
@@ -40,7 +40,7 @@ class UserItem(Resource):
                 for key, value in attrs.iteritems():
                     setattr(user, key, value)
 
-                return marshal(user, fields.USER)
+                return marshal(user, schema.User)
 
         parser = reqparse.RequestParser()
         parser.add_argument('name',     store_missing=False)
@@ -70,7 +70,7 @@ class UserItem(Resource):
                 user = model.User(**attrs)
                 session.add(user)
                 session.flush()
-                return marshal(user, fields.USER)
+                return marshal(user, schema.User)
 
         parser = reqparse.RequestParser()
         parser.add_argument('name',     store_missing=False)

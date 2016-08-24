@@ -4,16 +4,20 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Return total number of rows of a catalog. (Pau Tallada)
+- Token authentication and authorization. (Pau Tallada)
+- Send interactive queries to custom `YARN` queue. (Pau Tallada)
+
+### Changed
+- Generate download links with tokens for query results. (Pau Tallada)
+
 ### Fixed
 - Return partitioned table statistics. (Pau Tallada)
 - Store query start and finish time in UTC. (Pau Tallada)
 - Return partitions as virtual columns. (Pau Tallada)
 - Handle only failed jobs in hive progress. (Pau Tallada)
 
-### Added
-- Return total number of rows of a catalog. (Pau Tallada)
-- Token authentication and authorization. (Pau Tallada)
-- Send interactive queries to custom `YARN` queue. (Pau Tallada)
 
 ## [1.0.0] - 2016-08-19
 ### Added

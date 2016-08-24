@@ -4,9 +4,9 @@ from flask import g
 from itertools import izip_longest
 
 class Privilege(object):
-    def __init__(self, *args):
-        self._priv = args
-        self._repr = str(args)
+    def __init__(self, *priv):
+        self._priv = list(priv)
+        self._repr = str(priv)
     
     def can(self, privs=None):
         if privs == None:
@@ -38,6 +38,10 @@ class Privilege(object):
         p._repr = '({0}) | ({1})'.format(self, other)
         
         return p
+    
+    def __call__(self, *priv):
+        privs = self._priv + list(priv)
+        return Privilege(*privs)
     
     def __repr__(self):
         return self._repr

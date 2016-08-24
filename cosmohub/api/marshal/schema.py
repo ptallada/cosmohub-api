@@ -1,6 +1,8 @@
 from flask_restful import fields
 
-USER = {
+from .fields import DownloadQuery
+
+User = {
     'id'         : fields.Integer,
     'name'       : fields.String,
     'email'      : fields.String,
@@ -9,7 +11,7 @@ USER = {
     'groups'     : fields.List(fields.String(attribute='name')),
 }
 
-CATALOGS = {
+CatalogCollection = {
     'id'           : fields.Integer,
     'name'         : fields.String,
     'version'      : fields.String,
@@ -20,7 +22,7 @@ CATALOGS = {
     'ts_uploaded'  : fields.DateTime('iso8601'),
 }
 
-DATASET = {
+Dataset = {
     'id'          : fields.Integer,
     'name'        : fields.String,
     'version'     : fields.String,
@@ -31,7 +33,7 @@ DATASET = {
     'ts_defined'  : fields.DateTime('iso8601'),
 }
 
-FILE = {
+File = {
     'id'            : fields.Integer,
     'name'          : fields.String,
     'version'       : fields.String,
@@ -42,21 +44,21 @@ FILE = {
     'ts_uploaded'   : fields.DateTime('iso8601'),
 }
 
-CATALOG = CATALOGS.copy()
-CATALOG.update({
+Catalog = CatalogCollection.copy()
+Catalog.update({
     'relation' : fields.String,
     'rows'     : fields.Integer,
     'summary'  : fields.String,
-    'datasets' : fields.List(fields.Nested(DATASET)),
-    'files'    : fields.List(fields.Nested(FILE)),
+    'datasets' : fields.List(fields.Nested(Dataset)),
+    'files'    : fields.List(fields.Nested(File)),
 })
 
-COLUMN = {
+Column = {
     'name' : fields.String,
     'type' : fields.String,
 }
 
-QUERY = {
+Query = {
     'id'           : fields.Integer,
     'sql'          : fields.String,
     'format'       : fields.String,
@@ -66,9 +68,10 @@ QUERY = {
     'ts_submitted' : fields.DateTime('iso8601'),
     'ts_started'   : fields.DateTime('iso8601'),
     'ts_finished'  : fields.DateTime('iso8601'),
+    'download'     : DownloadQuery(attribute='id'),
 }
 
-TOKEN = {
+Token = {
     'id'         : fields.Integer,
     'name'       : fields.String,
     'email'      : fields.String,

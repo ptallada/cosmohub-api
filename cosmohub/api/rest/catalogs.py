@@ -6,7 +6,7 @@ from sqlalchemy.orm import joinedload
 
 from cosmohub.api import db, api_rest
 
-from .. import fields
+from ..marshal import schema
 from ..db import model
 from ..db.session import transactional_session
 from ..security import auth_required, PRIV_USER
@@ -28,7 +28,7 @@ class CatalogCollection(Resource):
 
             catalogs = public.union(restricted).all()
 
-            return marshal(catalogs, fields.CATALOGS)
+            return marshal(catalogs, schema.CatalogCollection)
 
 api_rest.add_resource(CatalogCollection, '/catalogs')
 
@@ -56,7 +56,7 @@ class CatalogItem(Resource):
                     raise http_exc.Forbidden
 
             columns = current_app.columns.loc[catalog.relation].to_dict('records')
-            data = marshal(catalog, fields.CATALOG)
+            data = marshal(catalog, schema.Catalog)
             data.update({'columns' : columns})
 
             return data

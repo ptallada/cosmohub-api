@@ -14,7 +14,7 @@ from .authorization import (
     PRIV_USER,
     PRIV_FRESH_LOGIN,
 )
-from .. import fields
+from ..marshal import schema
 from ..db import model
 from ..db.session import transactional_session
 
@@ -22,19 +22,18 @@ basic_auth = HTTPBasicAuth(realm='CosmoHub')
 token_auth = HTTPTokenAuth(realm='CosmoHub', scheme='Token')
 
 @basic_auth.verify_password
-def _verify_password(username, password):
+def verify_password(username, password):
     g.current_user = None
     g.current_privs = None
     
-    # First, try embedded token in query string
+    # Try embedded token in query string.
+    # If it does not succeed, continue with username and password
     token = request.args.get('auth_token')
     if token:
-        granted = _verify_token(token)
+        granted = verify_token(token)
         
         if granted:
             return True
-    
-    # If token authentication does not succeed, fallback to  username and password
     
     if not username or not password:
         return False
@@ -58,7 +57,7 @@ def _verify_password(username, password):
             if not user.password == password:
                 return False
 
-            g.current_user = marshal(user, fields.TOKEN)
+            g.current_user = marshal(user, schema.Token)
 
             g.current_privs = set([PRIV_USER, PRIV_FRESH_LOGIN])
             if user.is_admin:
@@ -67,7 +66,7 @@ def _verify_password(username, password):
             return True
 
 @token_auth.verify_token
-def _verify_token(token):
+def verify_token(token):
     g.current_user = None
     g.current_privs = None
     
