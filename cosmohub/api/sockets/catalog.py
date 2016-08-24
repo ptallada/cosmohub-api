@@ -92,7 +92,12 @@ def echo_socket(ws):
         username='jcarrete',
         database=current_app.config['HIVE_DATABASE']
     ).cursor()
-
+    
+    sql = "SET tez.queue.name={queue}".format(
+        queue = current_app.config['HIVE_YARN_QUEUE']
+    )
+    cursor.execute(sql, async=False)
+    
     running = gevent.event.Event()
     query = None
 
