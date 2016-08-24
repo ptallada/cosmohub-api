@@ -67,3 +67,9 @@ QUERY = {
     'ts_started'   : fields.DateTime('iso8601'),
     'ts_finished'  : fields.DateTime('iso8601'),
 }
+
+TOKEN = {
+    'id'         : fields.Integer,
+    'name'       : fields.String,
+    'email'      : fields.String,
+}

@@ -28,11 +28,14 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 DOWNLOADS_BASE_DIR = ''
 RESULTS_BASE_DIR = 'cosmohub_results' # Relative to ~
 
-# 64-byte (128 hex-chars) secret key for signing tokens and passwords
+# 64-byte (128 hex-chars) secret key for signing tokens and cookies
+# Change this to invalidate all sessions and tokens
 SECRET_KEY = binascii.unhexlify(
     '0000000000000000000000000000000000000000000000000000000000000000'
     '0000000000000000000000000000000000000000000000000000000000000000'
 )
+# Token expiration in seconds
+TOKEN_EXPIRE_IN = 3600
 
 # Password settings
 PASSLIB_CONTEXT = {

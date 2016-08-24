@@ -10,16 +10,23 @@ from cosmohub.api import db, api_rest
 from .. import fields
 from ..db import model
 from ..db.session import transactional_session, retry_on_serializable_error
-from ..security import auth
+from ..security import auth_required, PRIV_USER, PRIV_FRESH_LOGIN, PRIV_RESET_PASSWORD
 
 log = logging.getLogger(__name__)
 
 class UserItem(Resource):
-    @auth.login_required
+    @auth_required(PRIV_USER)
     def get(self):
-        return getattr(g, 'current_user')
+        with transactional_session(db.session, read_only=True) as session:
+            user = session.query(model.User).options(
+                    joinedload('groups')
+                ).filter_by(
+                    id=getattr(g, 'current_user')['id']
+                ).one()
 
-    @auth.login_required
+            return marshal(user, fields.USER)
+
+    @auth_required( (PRIV_USER & PRIV_FRESH_LOGIN) | PRIV_RESET_PASSWORD )
     def patch(self):
         @retry_on_serializable_error
         def patch_user(user_id, attrs):

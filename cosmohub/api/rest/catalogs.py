@@ -9,10 +9,10 @@ from cosmohub.api import db, api_rest
 from .. import fields
 from ..db import model
 from ..db.session import transactional_session
-from ..security import auth
+from ..security import auth_required, PRIV_USER
 
 class CatalogCollection(Resource):
-    decorators = [auth.login_required]
+    decorators = [auth_required(PRIV_USER)]
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
@@ -33,7 +33,7 @@ class CatalogCollection(Resource):
 api_rest.add_resource(CatalogCollection, '/catalogs')
 
 class CatalogItem(Resource):
-    decorators = [auth.login_required]
+    decorators = [auth_required(PRIV_USER)]
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:

@@ -5,12 +5,13 @@ patch_psycopg()
 
 import logging
 
-from flask import Flask, Blueprint, jsonify
+from flask import g, Flask, Blueprint, jsonify
 from flask_logconfig import LogConfig
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy, Model as FlaskModel
 from flask_sockets import Sockets
 from flask_cors import CORS
+from itsdangerous import TimedJSONWebSignatureSerializer
 from pkg_resources import iter_entry_points # @UnresolvedImport
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext import declarative
@@ -25,7 +26,7 @@ app = Flask(__name__)
 app.config.from_object('config')
 
 # Enable CORS
-CORS(app)
+CORS(app, expose_headers=['X-Token'])
 
 # Configure logging
 logconfig = LogConfig(app)
@@ -53,6 +54,19 @@ app.formats = {
     entry.name : entry.load()
     for entry in iter_entry_points(group='cosmohub_format')
 }
+
+# Set up token signer
+app.jwt = TimedJSONWebSignatureSerializer(app.config['SECRET_KEY'])
+
+# Add/refresh token to every authenticated request 
+@app.after_request
+def _refresh_token(response):
+    from .security.authentication import refresh_token
+    
+    token = refresh_token()
+    if token:
+        response.headers['X-Token'] = app.jwt.dumps(token)
+    return response
 
 # Configure REST API Blueprint
 mod_rest = Blueprint('rest', __name__, url_prefix='/rest')

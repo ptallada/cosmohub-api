@@ -14,11 +14,11 @@ from .. import fields
 from ..db import model
 from ..db.session import transactional_session, retry_on_serializable_error
 from ..io.hdfs import HDFSPathReader
-from ..security import auth
+from ..security import auth_required, PRIV_USER
 from ..utils import webhcat
 
 class QueryCollection(Resource):
-    decorators = [auth.login_required]
+    decorators = [auth_required(PRIV_USER)]
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
