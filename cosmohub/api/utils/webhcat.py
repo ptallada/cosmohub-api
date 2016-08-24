@@ -121,7 +121,7 @@ class Hive(object):
         :rtype: dict
         """
         
-        url = urljoin(self._jobs_url, quote(id))
+        url = urljoin(self._jobs_url, quote(id_))
         r = requests.delete(url, params=self._params)
         r.raise_for_status()
         
