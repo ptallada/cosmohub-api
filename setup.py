@@ -30,7 +30,7 @@ requires = [
     'passlib',
     'psycogreen',
     'psycopg2',
-    'pyhive[hive]',
+    'pyhive[hive] >= 0.2.0',
     'pyhdfs',
     'sasl',
     'sqlalchemy',
