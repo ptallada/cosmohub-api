@@ -46,6 +46,9 @@ class Privilege(object):
     def __repr__(self):
         return self._repr
     
+    def __hash__(self):
+        return hash(tuple(self.to_list()))
+    
     def to_list(self):
         return self._priv
 

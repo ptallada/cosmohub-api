@@ -8,6 +8,7 @@ import logging
 from flask import g, Flask, Blueprint, jsonify
 from flask_logconfig import LogConfig
 from flask_mail import Mail
+from flask_recaptcha import ReCaptcha
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy, Model as FlaskModel
 from flask_sockets import Sockets
@@ -34,6 +35,9 @@ CORS(app, expose_headers=['X-Token'])
 
 # Configure mail service
 mail = Mail(app)
+
+# Configure ReCaptcha service
+recaptcha = ReCaptcha(app)
 
 # Configure SQLAlchemy extension
 metadata = schema.MetaData()

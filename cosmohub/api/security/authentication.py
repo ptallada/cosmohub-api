@@ -95,13 +95,15 @@ def verify_token(token):
             return False
     
         g.current_user = marshal(user, schema.Token)
-        g.current_privs = set([Privilege(*priv) for priv in token.get('privs', [])])
+        privs = set([tuple(priv) for priv in token.get('privs', [])])
         
         if user.ts_email_confirmed == None:
-            g.current_privs.discard(PRIV_USER)
+            privs.add(tuple(PRIV_USER.to_list()))
 
         if user.is_admin:
-            g.current_privs.add(PRIV_ADMIN)
+            privs.add(tuple(PRIV_ADMIN.to_list()))
+
+        g.current_privs = set([Privilege(*priv) for priv in privs])
 
         return True
 

@@ -11,7 +11,7 @@ class DownloadURL(fields.Raw):
         from ..security.authentication import refresh_token
         from ..security.authorization import PRIV_DOWNLOAD
         
-        priv = self._priv + [value]
+        priv = self._priv() + [value]
         
         token = refresh_token()
         token.update({ 'privs' : PRIV_DOWNLOAD(*priv).to_list()})
@@ -32,7 +32,7 @@ class DownloadQueryURL(DownloadURL):
 
 class DownloadDatasetReadmeURL(DownloadURL):
     def _priv(self):
-        priv = super(DownloadQueryURL, self)._priv()
+        priv = super(DownloadDatasetReadmeURL, self)._priv()
         return priv + ['dataset']
     
     def format(self, value):
@@ -44,7 +44,7 @@ class DownloadDatasetReadmeURL(DownloadURL):
 
 class DownloadFileReadmeURL(DownloadURL):
     def _priv(self):
-        priv = super(DownloadQueryURL, self)._priv()
+        priv = super(DownloadFileReadmeURL, self)._priv()
         return priv + ['file']
     
     def format(self, value):
@@ -57,7 +57,7 @@ class DownloadFileReadmeURL(DownloadURL):
 
 class DownloadFileContentsURL(DownloadURL):
     def _priv(self):
-        priv = super(DownloadQueryURL, self)._priv()
+        priv = super(DownloadFileContentsURL, self)._priv()
         return priv + ['file']
     
     def format(self, value):

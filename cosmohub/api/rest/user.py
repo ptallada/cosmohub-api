@@ -7,7 +7,7 @@ from flask_restful import Resource, reqparse, marshal
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 
-from cosmohub.api import db, api_rest, mail
+from cosmohub.api import db, api_rest, mail, recaptcha
 
 from ..marshal import schema
 from ..db import model
@@ -117,12 +117,18 @@ class UserItem(Resource):
                 return marshal(user, schema.User)
 
         parser = reqparse.RequestParser()
-        parser.add_argument('name',     store_missing=False)
-        parser.add_argument('email',    store_missing=False)
-        parser.add_argument('password', store_missing=False)
-        parser.add_argument('groups',   store_missing=False, action='append')
+        parser.add_argument('name',      store_missing=False)
+        parser.add_argument('email',     store_missing=False)
+        parser.add_argument('password',  store_missing=False)
+        parser.add_argument('groups',    store_missing=False, action='append')
+        parser.add_argument('recaptcha', store_missing=False)
 
         attrs = parser.parse_args(strict=True)
+
+        if not recaptcha.verify(attrs['recaptcha']):
+            raise http_exc.Unauthorized('Captcha invalid')
+        
+        del attrs['recaptcha']
         
         return post_user(attrs), 201
 
@@ -161,6 +167,8 @@ class UserEmailConfirm(Resource):
                 
                 user.ts_email_confirmed = func.now()
                 
+                session.flush()
+                
                 return marshal(user, schema.User)
         
         return email_confirm(getattr(g, 'current_user')['id'])
@@ -171,8 +179,12 @@ class UserPasswordReset(Resource):
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('email', required=True)
+        parser.add_argument('recaptcha', store_missing=False)
         
         attrs = parser.parse_args(strict=True)
+        
+        if not recaptcha.verify(attrs['recaptcha']):
+            raise http_exc.Unauthorized('Captcha invalid')
         
         with transactional_session(db.session, read_only=True) as session:
             user = session.query(model.User).filter_by(
