@@ -1,0 +1,9 @@
+Hi {{ user.name }},
+
+Please open the following link to confirm your email:
+
+{{ link }}
+
+Best regards,
+
+The CosmoHub team.
