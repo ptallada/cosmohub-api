@@ -7,6 +7,7 @@ from cosmohub.api import db, ws
 
 from ..db import model
 from ..db.session import transactional_session
+from ..security.authentication import verify_token
 from ..utils import webhcat
 
 @ws.route('/sockets/queries')
@@ -17,8 +18,14 @@ def echo_socket(ws):
         database = current_app.config['HIVE_DATABASE']
     )
     
-    while not ws.closed:
-        try:
+    try:
+        msg = json.loads(ws.receive())
+    
+        # Do not proceed if there is not valid token
+        if not msg['type'] == 'auth' or not verify_token(msg['data']):
+            return
+    
+        while not ws.closed:
             with transactional_session(db.session) as session:
                 queries = session.query(model.Query).filter_by(
                     user_id = getattr(g, 'current_user')['id'],
@@ -38,11 +45,11 @@ def echo_socket(ws):
                         query.id : percent,
                     }
                 }))
-                
+            
             gevent.sleep(1)
-        
-        except TypeError:
-            if ws.closed:
-                break
-            else:
-                raise
+    
+    except TypeError:
+        if ws.closed:
+            return
+        else:
+            raise

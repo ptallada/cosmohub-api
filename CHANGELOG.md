@@ -17,7 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Store query start and finish time in UTC. (Pau Tallada)
 - Return partitions as virtual columns. (Pau Tallada)
 - Handle only failed jobs in hive progress. (Pau Tallada)
-
+- Authenticate web sockets connections. (Pau Tallada)
 
 ## [1.0.0] - 2016-08-19
 ### Added

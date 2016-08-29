@@ -7,6 +7,7 @@ from pyhive import hive
 
 from cosmohub.api import ws
 
+from ..security.authentication import verify_token
 from ..utils import hive_progress
 
 def _check_syntax(ws, cursor, sql):
@@ -101,33 +102,40 @@ def echo_socket(ws):
     running = gevent.event.Event()
     query = None
 
-    while not ws.closed:
-        try:
+    try:
+        msg = json.loads(ws.receive())
+        
+        # Do not proceed if there is not valid token
+        if not msg['type'] == 'auth' or not verify_token(msg['data']):
+            return
+
+        while not ws.closed:
             msg = json.loads(ws.receive())
-        except TypeError:
-            if ws.closed:
-                break
+        
+            if msg['type'] == 'syntax':
+                if running.is_set():
+                    # Concurrent operations are not supported.
+                    break
+    
+                _check_syntax(ws, cursor, msg['data']['sql'])
+    
+            elif msg['type'] == 'query':
+                if running.is_set():
+                    break
+                else:
+                    running.set()
+                    query = gevent.spawn(_execute_query, ws, cursor, running, msg['data']['sql'])
+    
+            elif msg['type'] == 'cancel':
+                if query and running.is_set():
+                    running.clear()
+                    query.join()
+    
             else:
-                raise
-
-        if msg['type'] == 'syntax':
-            if running.is_set():
-                # Concurrent operations are not supported.
                 break
-
-            _check_syntax(ws, cursor, msg['data']['sql'])
-
-        elif msg['type'] == 'query':
-            if running.is_set():
-                break
-            else:
-                running.set()
-                query = gevent.spawn(_execute_query, ws, cursor, running, msg['data']['sql'])
-
-        elif msg['type'] == 'cancel':
-            if query and running.is_set():
-                running.clear()
-                query.join()
-
+    
+    except TypeError:
+        if ws.closed:
+            return
         else:
-            break
+            raise
