@@ -1,6 +1,11 @@
 from flask_restful import fields
 
-from .fields import DownloadQuery
+from .fields import (
+    DownloadQueryURL,
+    DownloadDatasetReadmeURL,
+    DownloadFileReadmeURL,
+    DownloadFileContentsURL,
+)
 
 User = {
     'id'         : fields.Integer,
@@ -23,25 +28,25 @@ CatalogCollection = {
 }
 
 Dataset = {
-    'id'          : fields.Integer,
-    'name'        : fields.String,
-    'version'     : fields.String,
-    'description' : fields.String,
-    'rows'        : fields.Integer,
-    'recipe'      : fields.Raw,
-    'path_readme' : fields.String,
-    'ts_defined'  : fields.DateTime('iso8601'),
+    'id'              : fields.Integer,
+    'name'            : fields.String,
+    'version'         : fields.String,
+    'description'     : fields.String,
+    'rows'            : fields.Integer,
+    'recipe'          : fields.Raw,
+    'download_readme' : DownloadDatasetReadmeURL(attribute='id'),
+    'ts_defined'      : fields.DateTime('iso8601'),
 }
 
 File = {
-    'id'            : fields.Integer,
-    'name'          : fields.String,
-    'version'       : fields.String,
-    'description'   : fields.String,
-    'size'          : fields.Integer,
-    'path_readme'   : fields.String,
-    'path_contents' : fields.String,
-    'ts_uploaded'   : fields.DateTime('iso8601'),
+    'id'                : fields.Integer,
+    'name'              : fields.String,
+    'version'           : fields.String,
+    'description'       : fields.String,
+    'size'              : fields.Integer,
+    'download_readme'   : DownloadFileReadmeURL(attribute='id'),
+    'download_contents' : DownloadFileContentsURL(attribute='id'),
+    'ts_uploaded'       : fields.DateTime('iso8601'),
 }
 
 Catalog = CatalogCollection.copy()
@@ -59,16 +64,16 @@ Column = {
 }
 
 Query = {
-    'id'           : fields.Integer,
-    'sql'          : fields.String,
-    'format'       : fields.String,
-    'status'       : fields.String,
-    'job_id'       : fields.String,
-    'size'         : fields.Integer,
-    'ts_submitted' : fields.DateTime('iso8601'),
-    'ts_started'   : fields.DateTime('iso8601'),
-    'ts_finished'  : fields.DateTime('iso8601'),
-    'download'     : DownloadQuery(attribute='id'),
+    'id'               : fields.Integer,
+    'sql'              : fields.String,
+    'format'           : fields.String,
+    'status'           : fields.String,
+    'job_id'           : fields.String,
+    'size'             : fields.Integer,
+    'ts_submitted'     : fields.DateTime('iso8601'),
+    'ts_started'       : fields.DateTime('iso8601'),
+    'ts_finished'      : fields.DateTime('iso8601'),
+    'download_results' : DownloadQueryURL(attribute='id'),
 }
 
 Token = {

@@ -46,6 +46,15 @@ def echo_socket(ws):
                     }
                 }))
             
+            # FIXME: Remove
+            import random
+            ws.send(json.dumps({
+                'type' : 'progress',
+                'data' : {
+                    42 : random.randint(0, 100),
+                }
+            }))
+            
             gevent.sleep(1)
     
     except TypeError:

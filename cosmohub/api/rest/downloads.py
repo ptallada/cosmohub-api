@@ -15,7 +15,7 @@ from cosmohub.api import db, api_rest
 
 from ..db import model
 from ..db.session import transactional_session
-from ..security import auth_required, PRIV_USER, PRIV_QUERY_DOWNLOAD
+from ..security import auth_required, PRIV_USER, PRIV_DOWNLOAD
 from ..io.hdfs import HDFSPathReader
 
 def create_content_range(range_header, length):
@@ -111,7 +111,7 @@ class BaseDownload(object):
         return response
 
 class DatasetReadmeDownload(BaseDownload, Resource):
-    decorators = [auth_required(PRIV_USER)]
+    decorators = [auth_required(PRIV_USER | PRIV_DOWNLOAD('dataset'))]
 
     @staticmethod
     def _get_path(item):
@@ -134,8 +134,11 @@ class DatasetReadmeDownload(BaseDownload, Resource):
                 ).first()
 
                 if not user:
-                    raise http_exc.Forbidden
-
+                    priv = PRIV_DOWNLOAD('dataset', dataset.id)
+                    
+                    if not priv.can():
+                        raise http_exc.Forbidden
+            
             range_header = request.headers.get('Range', None)
             path = self._get_path(dataset)
             reader = HDFSPathReader(self._create_client(), path)
@@ -145,7 +148,7 @@ class DatasetReadmeDownload(BaseDownload, Resource):
 api_rest.add_resource(DatasetReadmeDownload, '/downloads/datasets/<int:id_>/readme')
 
 class FileResource(Resource):
-    decorators = [auth_required(PRIV_USER)]
+    decorators = [auth_required(PRIV_USER | PRIV_DOWNLOAD('file'))]
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
@@ -169,7 +172,10 @@ class FileResource(Resource):
                 ).first()
 
                 if not user:
-                    raise http_exc.Forbidden
+                    priv = PRIV_DOWNLOAD('file', file_.id)
+                    
+                    if not priv.can():
+                        raise http_exc.Forbidden
             
             range_header = request.headers.get('Range', None)
             path = self._get_path(file_)
@@ -197,7 +203,7 @@ class FileContentsDownload(BaseDownload, FileResource):
 api_rest.add_resource(FileContentsDownload, '/downloads/files/<int:id_>/contents')
 
 class QueryDownload(BaseDownload, Resource):
-    decorators = [auth_required(PRIV_USER | PRIV_QUERY_DOWNLOAD)]
+    decorators = [auth_required(PRIV_USER | PRIV_DOWNLOAD('query'))]
 
     def _headers(self, path):
         headers = super(QueryDownload, self)._headers(path)
@@ -222,9 +228,14 @@ class QueryDownload(BaseDownload, Resource):
             ).filter(
                 model.Query.id == id_,
                 model.User.id == getattr(g, 'current_user')['id'],
+                
             ).first()
 
             if not user:
+                raise http_exc.Forbidden
+            
+            priv = PRIV_USER | PRIV_DOWNLOAD('query', query.id)
+            if not priv.can():
                 raise http_exc.Forbidden
 
             range_header = request.headers.get('Range', None)

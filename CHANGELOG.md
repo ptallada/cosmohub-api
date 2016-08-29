@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Token authentication and authorization. (Pau Tallada)
 - Send interactive queries to custom `YARN` queue. (Pau Tallada)
 - Transaction emails on register and password reset. (Pau Tallada)
+- Generate download links with tokens for files and datasets. (Pau Tallada)
 
 ### Changed
 - Generate download links with tokens for query results. (Pau Tallada)
