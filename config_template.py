@@ -67,3 +67,13 @@ WEBHCAT_SCRIPT_TEMPLATE = textwrap.dedent("""\
     ;
     """
 )
+
+MAIL_SERVER = 'localhost'
+MAIL_PORT = 25
+MAIL_USE_TLS = False
+MAIL_USE_SSL = False
+MAIL_USERNAME = None
+MAIL_PASSWORD = None
+MAIL_DEFAULT_SENDER = 'CosmoHub <cosmohub@pic.es>'
+
+REDIRECT_EMAIL_CONFIRMATION_OK = 'http://cosmohub.pic.es/'

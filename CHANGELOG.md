@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Return total number of rows of a catalog. (Pau Tallada)
 - Token authentication and authorization. (Pau Tallada)
 - Send interactive queries to custom `YARN` queue. (Pau Tallada)
+- Transaction emails on register and password reset. (Pau Tallada)
 
 ### Changed
 - Generate download links with tokens for query results. (Pau Tallada)

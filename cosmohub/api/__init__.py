@@ -7,6 +7,7 @@ import logging
 
 from flask import g, Flask, Blueprint, jsonify
 from flask_logconfig import LogConfig
+from flask_mail import Mail
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy, Model as FlaskModel
 from flask_sockets import Sockets
@@ -25,11 +26,14 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config.from_object('config')
 
+# Configure logging
+logconfig = LogConfig(app)
+
 # Enable CORS
 CORS(app, expose_headers=['X-Token'])
 
-# Configure logging
-logconfig = LogConfig(app)
+# Configure mail service
+mail = Mail(app)
 
 # Configure SQLAlchemy extension
 metadata = schema.MetaData()
@@ -63,7 +67,8 @@ app.jwt = TimedJSONWebSignatureSerializer(app.config['SECRET_KEY'])
 def _refresh_token(response):
     from .security.authentication import refresh_token
     
-    token = refresh_token()
+    current_privs = getattr(g, 'current_privs', None)
+    token = refresh_token(current_privs)
     if token:
         response.headers['X-Token'] = app.jwt.dumps(token)
     return response

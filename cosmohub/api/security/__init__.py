@@ -8,12 +8,12 @@ from .authentication import (
     token_auth,
 )
 from .authorization import (
+    PRIV_USER,
     PRIV_ADMIN,
     PRIV_FRESH_LOGIN,
-    PRIV_QUERY_DOWNLOAD,
-    PRIV_RESET_PASSWORD,
-    PRIV_USER,
-    PRIV_VALIDATE_EMAIL,
+    PRIV_DOWNLOAD,
+    PRIV_PASSWORD_RESET,
+    PRIV_EMAIL_CONFIRM,
 )
 
 auth = MultiAuth(basic_auth, token_auth)

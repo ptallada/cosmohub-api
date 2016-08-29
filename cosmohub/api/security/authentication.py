@@ -3,8 +3,9 @@ from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from flask_restful import marshal
 from itsdangerous import BadData
 from operator import methodcaller
-from sqlalchemy.orm import joinedload, undefer_group
+from sqlalchemy.orm import undefer_group
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import func
 
 from cosmohub.api import db
 
@@ -41,11 +42,9 @@ def verify_password(username, password):
     with transactional_session(db.session, read_only=False) as session:
         try:
             user = session.query(model.User).options(
-                joinedload(model.User.groups),
                 undefer_group('password'),
-            ).filter_by(
-                email=username,
-                is_enabled=True,
+            ).filter(
+                model.User.email==username,
             ).one()
 
         except NoResultFound:
@@ -57,9 +56,15 @@ def verify_password(username, password):
             if not user.password == password:
                 return False
 
-            g.current_user = marshal(user, schema.Token)
+            # Update last login timestamp
+            user.ts_last_login = func.now()
 
-            g.current_privs = set([PRIV_USER, PRIV_FRESH_LOGIN])
+            g.current_user = marshal(user, schema.Token)
+            g.current_privs = set([PRIV_FRESH_LOGIN])
+            
+            if user.ts_email_confirmed != None:
+                g.current_privs.add(PRIV_USER)
+                
             if user.is_admin:
                 g.current_privs.add(PRIV_ADMIN)
 
@@ -73,24 +78,40 @@ def verify_token(token):
     if not token:
         return False
     
-    try:
-        g.current_user = current_app.jwt.loads(token)
-    except BadData:
-        return False
+    with transactional_session(db.session, read_only=False) as session:
+        try:
+            token = current_app.jwt.loads(token)
+            
+            user = session.query(model.User).options(
+                undefer_group('password'),
+            ).filter(
+                model.User.id==token['id'],
+            ).one()
+        
+        except BadData:
+            return False
+        
+        except NoResultFound:
+            return False
     
-    g.current_privs = set([Privilege(*priv) for priv in g.current_user.pop('privs', [])])
+        g.current_user = marshal(user, schema.Token)
+        g.current_privs = set([Privilege(*priv) for priv in token.get('privs', [])])
+        
+        if user.ts_email_confirmed == None:
+            g.current_privs.discard(PRIV_USER)
 
-    return True
+        if user.is_admin:
+            g.current_privs.add(PRIV_ADMIN)
 
-def refresh_token():
+        return True
+
+def refresh_token(current_privs=None):
     token = {}
     current_user = getattr(g, 'current_user', None)
     if current_user:
         token.update(current_user)
     
-    current_privs = getattr(g, 'current_privs', None)
     if current_privs:
-        current_privs.discard(PRIV_FRESH_LOGIN)
         token.update({ 'privs' : map(methodcaller('to_list'), current_privs)})
     
     return token

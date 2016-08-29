@@ -31,13 +31,14 @@ class User(db.Model):
     _Password = PasswordType(onload=lambda: current_app.config['PASSLIB_CONTEXT'])
 
     # Columns
-    _id        = Column('id',         Integer,    nullable=False,                            comment='User unique identifier')
-    name       = Column('name',       String(64), nullable=False,                            comment='Full name (for metadata purposes)')
-    email      = Column('email',      String(64), nullable=False,                            comment='E-Mail address')
-    is_enabled = Column('is_enabled', Boolean,    nullable=False, default=False,             comment='Whether this User has login privileges')
-    is_admin   = Column('is_admin',   Boolean,    nullable=False, default=False,             comment='Whether this User has admin privileges')
-    password   = Column('password',   _Password,  nullable=False,                            comment='Password')
-    ts_created = Column('ts_created', DateTime,   nullable=False, server_default=func.now(), comment='When this User was created')
+    _id                = Column('id',                 Integer,    nullable=False,                            comment='User unique identifier')
+    name               = Column('name',               String(64), nullable=False,                            comment='Full name (for metadata purposes)')
+    email              = Column('email',              String(64), nullable=False,                            comment='E-Mail address')
+    is_admin           = Column('is_admin',           Boolean,    nullable=False, default=False,             comment='Whether this User has admin privileges')
+    password           = Column('password',           _Password,  nullable=False,                            comment='User credentials')
+    ts_created         = Column('ts_created',         DateTime,   nullable=False, server_default=func.now(), comment='User creation timestamp')
+    ts_email_confirmed = Column('ts_email_confirmed', DateTime,   nullable=True,                             comment='Email confirmation timestamp')
+    ts_last_login      = Column('ts_last_login',      DateTime,   nullable=True,                             comment='Last login timestamp')
 
     # Relationships
     groups = relationship('Group',

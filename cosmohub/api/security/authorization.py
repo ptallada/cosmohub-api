@@ -50,8 +50,8 @@ class Privilege(object):
         return self._priv
 
 PRIV_ADMIN          = Privilege('admin')
-PRIV_FRESH_LOGIN    = Privilege('fresh')
-PRIV_QUERY_DOWNLOAD = Privilege('query_download')
-PRIV_RESET_PASSWORD = Privilege('reset_password')
 PRIV_USER           = Privilege('user')
-PRIV_VALIDATE_EMAIL = Privilege('validate_email')
+PRIV_FRESH_LOGIN    = Privilege('fresh')
+PRIV_DOWNLOAD       = Privilege('download')
+PRIV_PASSWORD_RESET = Privilege('password_reset')
+PRIV_EMAIL_CONFIRM  = Privilege('email_confirm')

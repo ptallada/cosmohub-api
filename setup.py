@@ -22,6 +22,7 @@ requires = [
     'flask',
     'flask-cors',
     'flask-httpauth',
+    'flask-mail',
     'flask-restful',
     'flask-sockets',
     'flask-sqlalchemy',
