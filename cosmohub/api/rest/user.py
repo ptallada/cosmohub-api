@@ -2,7 +2,7 @@ import logging
 import werkzeug.exceptions as http_exc
 import zlib
 
-from flask import g, current_app, render_template, redirect
+from flask import g, current_app, render_template
 from flask_restful import Resource, reqparse, marshal
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
@@ -19,7 +19,6 @@ from ..security import (
     PRIV_PASSWORD_RESET,
     PRIV_EMAIL_CONFIRM,
 )
-from ..security.authentication import refresh_token
 
 log = logging.getLogger(__name__)
 
@@ -162,9 +161,9 @@ class UserEmailConfirm(Resource):
                 
                 user.ts_email_confirmed = func.now()
                 
-                return current_app.config['REDIRECT_EMAIL_CONFIRMED_OK']
+                return marshal(user, schema.User)
         
-        return redirect(email_confirm(getattr(g, 'current_user')['id']), 303)
+        return email_confirm(getattr(g, 'current_user')['id'])
 
 api_rest.add_resource(UserEmailConfirm, '/user/email_confirm')
 

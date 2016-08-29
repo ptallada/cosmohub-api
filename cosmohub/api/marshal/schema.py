@@ -8,12 +8,14 @@ from .fields import (
 )
 
 User = {
-    'id'         : fields.Integer,
-    'name'       : fields.String,
-    'email'      : fields.String,
-    'is_enabled' : fields.Boolean,
-    'is_admin'   : fields.Boolean,
-    'groups'     : fields.List(fields.String(attribute='name')),
+    'id'                 : fields.Integer,
+    'name'               : fields.String,
+    'email'              : fields.String,
+    'is_admin'           : fields.Boolean,
+    'groups'             : fields.List(fields.String(attribute='name')),
+    'ts_created'         : fields.DateTime('iso8601'),
+    'ts_email_confirmed' : fields.DateTime('iso8601'),
+    'ts_last_login'      : fields.DateTime('iso8601'),
 }
 
 CatalogCollection = {
@@ -51,17 +53,12 @@ File = {
 
 Catalog = CatalogCollection.copy()
 Catalog.update({
+    'summary'  : fields.String,
     'relation' : fields.String,
     'rows'     : fields.Integer,
-    'summary'  : fields.String,
     'datasets' : fields.List(fields.Nested(Dataset)),
     'files'    : fields.List(fields.Nested(File)),
 })
-
-Column = {
-    'name' : fields.String,
-    'type' : fields.String,
-}
 
 Query = {
     'id'               : fields.Integer,

@@ -6,7 +6,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint, UniqueConstraint, Index
 from sqlalchemy.sql import func
-from sqlalchemy.types import BigInteger, Boolean, Date, DateTime, Enum, Integer, String, Text
+from sqlalchemy.types import BigInteger, Boolean, DateTime, Enum, Integer, String, Text
 from sqlalchemy_utils import PasswordType, force_auto_coercion
 
 from .schema import Column
@@ -169,7 +169,7 @@ class Catalog(db.Model):
     rows         = Column('rows',         BigInteger,  nullable=False,                            comment='Total number of rows')
     is_public    = Column('is_public',    Boolean,     nullable=False, default=False,             comment='Whether this Catalog is accessible to anyone')
     is_simulated = Column('is_simulated', Boolean,     nullable=False,                            comment='Whether this Catalog data is simulated')
-    ts_released  = Column('ts_released',  Date,        nullable=True,                             comment='When this Catalog was released')
+    ts_released  = Column('ts_released',  DateTime,    nullable=True,                             comment='When this Catalog was released')
     ts_uploaded  = Column('ts_uploaded',  DateTime,    nullable=False, server_default=func.now(), comment='When this Catalog was uploaded')
 
     # Relationships
