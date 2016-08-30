@@ -1,13 +1,37 @@
 import enum
+import textwrap
 
 from flask import current_app
+from sqlalchemy import (
+    DDL,
+    event,
+)
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint, UniqueConstraint, Index
+from sqlalchemy.orm import (
+    relationship,
+    backref,
+)
+from sqlalchemy.schema import (
+    ForeignKeyConstraint,
+    PrimaryKeyConstraint,
+    UniqueConstraint,
+    Index,
+)
 from sqlalchemy.sql import func
-from sqlalchemy.types import BigInteger, Boolean, DateTime, Enum, Integer, String, Text
-from sqlalchemy_utils import PasswordType, force_auto_coercion
+from sqlalchemy.types import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Enum,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy_utils import (
+    PasswordType,
+    force_auto_coercion,
+)
 
 from .schema import Column
 
@@ -79,10 +103,11 @@ class ACL(db.Model):
     )
 
     # Columns
-    _user_id   = Column('user_id',    Integer,  nullable=False,                            comment='User unique identifier')
-    _group_id  = Column('group_id',   Integer,  nullable=False,                            comment='Group unique identifier')
-    ts_created = Column('ts_created', DateTime, nullable=False, server_default=func.now(), comment='When this entry was created')
-    is_granted = Column('is_granted', Boolean,  nullable=False, default=False,             comment='Whether this User has access to this Group')
+    _user_id        = Column('user_id',         Integer,  nullable=False,                            comment='User unique identifier')
+    _group_id       = Column('group_id',        Integer,  nullable=False,                            comment='Group unique identifier')
+    ts_created      = Column('ts_created',      DateTime, nullable=False, server_default=func.now(), comment='When this entry was created')
+    is_granted      = Column('is_granted',      Boolean,  nullable=True,                             comment='Whether this User has access to this Group')
+    ts_last_updated = Column('ts_last_updated', DateTime, nullable=True,                             comment='When this entry was last updated')
 
     def __repr__(self):
         return u"%s(user_id=%s, group_id=%s, is_granted=%s)" % (
@@ -91,6 +116,39 @@ class ACL(db.Model):
             repr(self._group_id),
             repr(self.is_granted),
         )
+
+event.listen(
+    ACL.__table__,
+    "after_create",
+    DDL(
+        textwrap.dedent("""\
+            CREATE OR REPLACE FUNCTION acl__ts_last_updated__before_update()
+            RETURNS TRIGGER AS $$
+            BEGIN
+               NEW.ts_last_updated = now();
+               RETURN NEW;
+            END;
+            $$ language 'plpgsql' VOLATILE;
+            
+            CREATE TRIGGER acl__ts_last_updated__before_update
+            BEFORE UPDATE
+            ON acl
+            FOR EACH ROW
+            EXECUTE PROCEDURE acl__ts_last_updated__before_update();
+        """)
+    )
+)
+
+event.listen(
+    ACL.__table__,
+    "before_drop",
+    DDL(
+        textwrap.dedent("""\
+            DROP TRIGGER IF EXISTS acl__ts_last_updated__before_update ON acl;
+            DROP FUNCTION IF EXISTS acl__ts_last_updated__before_update();
+        """)
+    )
+)
 
 class Group(db.Model):
     """\
