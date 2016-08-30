@@ -58,7 +58,5 @@ def echo_socket(ws):
             gevent.sleep(1)
     
     except TypeError:
-        if ws.closed:
-            return
-        else:
+        if not ws.closed:
             raise
