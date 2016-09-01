@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Generate download links with tokens for query results. (Pau Tallada)
 - Add `ts_last_updated` with a trigger to ACL table. (Pau Tallada)
+- Retrieve redirect URL from frontend in user registration. (Pau Tallada)
 
 ### Fixed
 - Return partitioned table statistics. (Pau Tallada)

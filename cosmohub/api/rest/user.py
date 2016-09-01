@@ -1,8 +1,10 @@
 import logging
+import urllib
+import urlparse
 import werkzeug.exceptions as http_exc
 import zlib
 
-from flask import g, current_app, render_template
+from flask import g, current_app, render_template, request
 from flask_restful import Resource, reqparse, marshal
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
@@ -97,7 +99,10 @@ class UserItem(Resource):
                 attrs['all_groups'] = attrs['groups']
                 attrs['all_groups'] = set(groups)
                 del attrs['groups']
-
+                
+                url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['redirect_to'])
+                del attrs['redirect_to']
+                
                 user = model.User(**attrs)
                 session.add(user)
                 session.flush()
@@ -105,7 +110,8 @@ class UserItem(Resource):
                 token = marshal(user, schema.Token)
                 token.update({ 'privs' : [PRIV_EMAIL_CONFIRM(zlib.adler32(user.email)).to_list()]})
                 token = current_app.jwt.dumps(token)
-                url = api_rest.url_for(UserEmailConfirm, auth_token=token, _external=True)
+                
+                url += '?' + urllib.urlencode({ 'auth_token' : token })
                 
                 mail.send_message(
                     subject = 'Welcome to CosmoHub: Account activation',
@@ -117,11 +123,12 @@ class UserItem(Resource):
                 return marshal(user, schema.User)
 
         parser = reqparse.RequestParser()
-        parser.add_argument('name',      store_missing=False)
-        parser.add_argument('email',     store_missing=False)
-        parser.add_argument('password',  store_missing=False)
-        parser.add_argument('groups',    store_missing=False, action='append')
-        parser.add_argument('recaptcha', store_missing=False)
+        parser.add_argument('name',        store_missing=False)
+        parser.add_argument('email',       store_missing=False)
+        parser.add_argument('password',    store_missing=False)
+        parser.add_argument('groups',      store_missing=False, action='append')
+        parser.add_argument('recaptcha',   store_missing=False)
+        parser.add_argument('redirect_to', store_missing=False)
 
         attrs = parser.parse_args(strict=True)
 
