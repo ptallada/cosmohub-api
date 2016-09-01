@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Generate download links with tokens for files and datasets. (Pau Tallada)
 - Initial transactional mail templates. (Pau Tallada)
 - Capcha validation on password reset and user registration. (Pau Tallada)
+- Allow cancelling of a running query. (Pau Tallada)
 
 ### Changed
 - Generate download links with tokens for query results. (Pau Tallada)

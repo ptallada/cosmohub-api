@@ -86,6 +86,25 @@ class QueryCollection(Resource):
 
 api_rest.add_resource(QueryCollection, '/queries')
 
+class QueryCancel(Resource):
+    decorators = [auth_required(PRIV_USER)]
+
+    def post(self, id_):
+        hive_rest=webhcat.Hive(
+            url=current_app.config['WEBHCAT_BASE_URL'],
+            username='jcarrete',
+            database=current_app.config['HIVE_DATABASE']
+        )
+        
+        with transactional_session(db.session, read_only=True) as session:
+            query = session.query(model.Query).filter_by(
+                id=id_,
+            ).one()
+            
+            hive_rest.cancel(query.job_id)
+
+api_rest.add_resource(QueryCancel, '/queries/<int:id_>/cancel')
+
 class QueryCallback(Resource):
     def get(self, id_):
         hive_rest=webhcat.Hive(
