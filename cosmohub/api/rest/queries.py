@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 
 from datetime import datetime
@@ -16,6 +17,8 @@ from ..db.session import transactional_session, retry_on_serializable_error
 from ..io.hdfs import HDFSPathReader
 from ..security import auth_required, PRIV_USER
 from ..utils import webhcat
+
+log = logging.getLogger(__name__)
 
 class QueryCollection(Resource):
     decorators = [auth_required(PRIV_USER)]
@@ -86,6 +89,51 @@ class QueryCollection(Resource):
 
 api_rest.add_resource(QueryCollection, '/queries')
 
+def finish_query(query, status):
+    cursor=hive.connect(
+        current_app.config['HIVE_HOST'],
+        username='jcarrete',
+        database=current_app.config['HIVE_DATABASE']
+    ).cursor()
+    
+    client=HdfsClient(
+        hosts=current_app.config['HADOOP_NAMENODES'],
+        user_name='jcarrete'
+    )
+    
+    if not model.Query.Status[status['status']['state']].is_final():
+        return
+    
+    # Update query columns upon completion
+    query.status = model.Query.Status[status['status']['state']].value
+    
+    query.ts_started = datetime.utcfromtimestamp(status['status']['startTime']/1000.)
+    query.ts_finished = datetime.utcfromtimestamp(status['status']['finishTime']/1000.)
+    exit_code = status['exitValue']
+    
+    if exit_code and int(exit_code) != 0:
+        query.status = model.Query.Status.FAILED.value # @UndefinedVariable
+        return
+    
+    if query.status != model.Query.Status.SUCCEEDED.value: # @UndefinedVariable
+        return
+    
+    # Retrieve and store query schema
+    sql = "SELECT * FROM ( {0} ) AS t LIMIT 0".format(query.sql)
+    cursor.execute(sql, async=False)
+    query.schema = [
+        [f[0][2:], f[1], f[2], f[3], f[4], f[5], f[6]]
+        for f in cursor.description
+    ]
+    
+    path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id))
+    if not path.startswith('/'):
+        path = os.path.join(client.get_home_directory(), path)
+    
+    reader = HDFSPathReader(client, path)
+    data = current_app.formats[query.format](reader, query.schema)
+    query.size = data.seek(0, io.SEEK_END)
+
 class QueryCancel(Resource):
     decorators = [auth_required(PRIV_USER)]
 
@@ -95,13 +143,18 @@ class QueryCancel(Resource):
             username='jcarrete',
             database=current_app.config['HIVE_DATABASE']
         )
+        @retry_on_serializable_error
+        def cancel_query(id_):
+            with transactional_session(db.session) as session:
+                query = session.query(model.Query).filter_by(
+                    id=id_,
+                ).one()
+                
+                status = hive_rest.cancel(query.job_id)
+                
+                return finish_query(query, status)
         
-        with transactional_session(db.session, read_only=True) as session:
-            query = session.query(model.Query).filter_by(
-                id=id_,
-            ).one()
-            
-            hive_rest.cancel(query.job_id)
+        cancel_query(id_)
 
 api_rest.add_resource(QueryCancel, '/queries/<int:id_>/cancel')
 
@@ -111,17 +164,6 @@ class QueryCallback(Resource):
             url=current_app.config['WEBHCAT_BASE_URL'],
             username='jcarrete',
             database=current_app.config['HIVE_DATABASE']
-        )
-        
-        cursor=hive.connect(
-            current_app.config['HIVE_HOST'],
-            username='jcarrete',
-            database=current_app.config['HIVE_DATABASE']
-        ).cursor()
-        
-        client=HdfsClient(
-            hosts=current_app.config['HADOOP_NAMENODES'],
-            user_name='jcarrete'
         )
         
         @retry_on_serializable_error
@@ -136,34 +178,7 @@ class QueryCallback(Resource):
                 
                 status = hive_rest.status(query.job_id)
                 
-                if not status['completed']:
-                    return
-                
-                # Update query columns upon completion
-                query.status = model.Query.Status[status['status']['state']].value
-                query.ts_started = datetime.utcfromtimestamp(status['status']['startTime']/1000.)
-                query.ts_finished = datetime.utcfromtimestamp(status['status']['finishTime']/1000.)
-                query.exit_code = int(status['exitValue'])
-                
-                if query.exit_code != 0:
-                    query.status = model.Query.Status.FAILED.value # @UndefinedVariable
-                    return
-                
-                # Retrieve and store query schema
-                sql = "SELECT * FROM ( {0} ) AS t LIMIT 0".format(query.sql)
-                cursor.execute(sql, async=False)
-                query.schema = [
-                    [f[0][2:], f[1], f[2], f[3], f[4], f[5], f[6]]
-                    for f in cursor.description
-                ]
-                
-                path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id))
-                if not path.startswith('/'):
-                    path = os.path.join(client.get_home_directory(), path)
-                
-                reader = HDFSPathReader(client, path)
-                data = current_app.formats[query.format](reader, query.schema)
-                query.size = data.seek(0, io.SEEK_END)
+                return finish_query(query, status)
 
         check_query(id_)
 
