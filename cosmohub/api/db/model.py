@@ -318,7 +318,7 @@ class Query(db.Model):
         RUNNING   = 'PROCESSING'
         SUCCEEDED = 'SUCCEEDED'
         FAILED    = 'FAILED'
-        KILLED    = 'KILLED'
+        KILLED    = 'CANCELLED'
         UNKNOWN   = 'UNKNOWN'
         
         def is_final(self):
