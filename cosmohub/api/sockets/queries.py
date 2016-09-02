@@ -46,11 +46,13 @@ def echo_socket(ws):
             new_set.clear()
             for query in queries:
                 new_set.add(query.id)
-                old_set.remove(query.id)
+                old_set.discard(query.id)
                 
                 status = hive_rest.status(query.job_id)
                 progress = status["percentComplete"]
-                percent = int(progress[:progress.index('%')])
+                percent = 0
+                if progress:
+                    percent = int(progress[:progress.index('%')])
                 
                 data[query.id] = percent
             
@@ -58,14 +60,15 @@ def echo_socket(ws):
                 # Some tracked query has completed.
                 # Send non existing query ID to force refresh
                 data[0] = 0
-
-            # Send query progress
-            ws.send(json.dumps({
-                'type' : 'progress',
-                'data' : data,
-            }))
             
-            old_set = new_set
+            if data:
+                # Send query progress
+                ws.send(json.dumps({
+                    'type' : 'progress',
+                    'data' : data,
+                }))
+            
+            old_set = new_set.copy()
             
             time.sleep(5)
     
@@ -74,5 +77,5 @@ def echo_socket(ws):
     except TypeError:
         if not ws.closed:
             raise
-
-    log.info("Closing websocket connection")
+    finally:
+        log.info("Closing websocket connection")
