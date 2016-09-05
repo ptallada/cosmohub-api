@@ -1,0 +1,11 @@
+Hi {{ user.name }},
+
+Welcome to CosmoHub!
+
+Please open the following link to activate your account:
+
+{{ url }}
+
+Best regards,
+
+The CosmoHub team.

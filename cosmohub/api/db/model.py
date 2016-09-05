@@ -1,13 +1,37 @@
 import enum
+import textwrap
 
 from flask import current_app
+from sqlalchemy import (
+    DDL,
+    event,
+)
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy.schema import ForeignKeyConstraint, PrimaryKeyConstraint, UniqueConstraint, Index
+from sqlalchemy.orm import (
+    relationship,
+    backref,
+)
+from sqlalchemy.schema import (
+    ForeignKeyConstraint,
+    PrimaryKeyConstraint,
+    UniqueConstraint,
+    Index,
+)
 from sqlalchemy.sql import func
-from sqlalchemy.types import BigInteger, Boolean, Date, DateTime, Enum, Integer, String, Text
-from sqlalchemy_utils import PasswordType, force_auto_coercion
+from sqlalchemy.types import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Enum,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy_utils import (
+    PasswordType,
+    force_auto_coercion,
+)
 
 from .schema import Column
 
@@ -31,13 +55,14 @@ class User(db.Model):
     _Password = PasswordType(onload=lambda: current_app.config['PASSLIB_CONTEXT'])
 
     # Columns
-    _id        = Column('id',         Integer,    nullable=False,                            comment='User unique identifier')
-    name       = Column('name',       String(64), nullable=False,                            comment='Full name (for metadata purposes)')
-    email      = Column('email',      String(64), nullable=False,                            comment='E-Mail address')
-    is_enabled = Column('is_enabled', Boolean,    nullable=False, default=False,             comment='Whether this User has login privileges')
-    is_admin   = Column('is_admin',   Boolean,    nullable=False, default=False,             comment='Whether this User has admin privileges')
-    password   = Column('password',   _Password,  nullable=False,                            comment='Password')
-    ts_created = Column('ts_created', DateTime,   nullable=False, server_default=func.now(), comment='When this User was created')
+    _id                = Column('id',                 Integer,    nullable=False,                            comment='User unique identifier')
+    name               = Column('name',               String(64), nullable=False,                            comment='Full name (for metadata purposes)')
+    email              = Column('email',              String(64), nullable=False,                            comment='E-Mail address')
+    is_admin           = Column('is_admin',           Boolean,    nullable=False, default=False,             comment='Whether this User has admin privileges')
+    password           = Column('password',           _Password,  nullable=False,                            comment='User credentials')
+    ts_created         = Column('ts_created',         DateTime,   nullable=False, server_default=func.now(), comment='User creation timestamp')
+    ts_email_confirmed = Column('ts_email_confirmed', DateTime,   nullable=True,                             comment='Email confirmation timestamp')
+    ts_last_login      = Column('ts_last_login',      DateTime,   nullable=True,                             comment='Last login timestamp')
 
     # Relationships
     groups = relationship('Group',
@@ -78,10 +103,11 @@ class ACL(db.Model):
     )
 
     # Columns
-    _user_id   = Column('user_id',    Integer,  nullable=False,                            comment='User unique identifier')
-    _group_id  = Column('group_id',   Integer,  nullable=False,                            comment='Group unique identifier')
-    ts_created = Column('ts_created', DateTime, nullable=False, server_default=func.now(), comment='When this entry was created')
-    is_granted = Column('is_granted', Boolean,  nullable=False, default=False,             comment='Whether this User has access to this Group')
+    _user_id        = Column('user_id',         Integer,  nullable=False,                            comment='User unique identifier')
+    _group_id       = Column('group_id',        Integer,  nullable=False,                            comment='Group unique identifier')
+    ts_created      = Column('ts_created',      DateTime, nullable=False, server_default=func.now(), comment='When this entry was created')
+    is_granted      = Column('is_granted',      Boolean,  nullable=True,                             comment='Whether this User has access to this Group')
+    ts_last_updated = Column('ts_last_updated', DateTime, nullable=True,                             comment='When this entry was last updated')
 
     def __repr__(self):
         return u"%s(user_id=%s, group_id=%s, is_granted=%s)" % (
@@ -90,6 +116,39 @@ class ACL(db.Model):
             repr(self._group_id),
             repr(self.is_granted),
         )
+
+event.listen(
+    ACL.__table__,
+    "after_create",
+    DDL(
+        textwrap.dedent("""\
+            CREATE OR REPLACE FUNCTION acl__ts_last_updated__before_update()
+            RETURNS TRIGGER AS $$
+            BEGIN
+               NEW.ts_last_updated = now();
+               RETURN NEW;
+            END;
+            $$ language 'plpgsql' VOLATILE;
+            
+            CREATE TRIGGER acl__ts_last_updated__before_update
+            BEFORE UPDATE
+            ON acl
+            FOR EACH ROW
+            EXECUTE PROCEDURE acl__ts_last_updated__before_update();
+        """)
+    )
+)
+
+event.listen(
+    ACL.__table__,
+    "before_drop",
+    DDL(
+        textwrap.dedent("""\
+            DROP TRIGGER IF EXISTS acl__ts_last_updated__before_update ON acl;
+            DROP FUNCTION IF EXISTS acl__ts_last_updated__before_update();
+        """)
+    )
+)
 
 class Group(db.Model):
     """\
@@ -165,9 +224,10 @@ class Catalog(db.Model):
     description  = Column('description',  String(256), nullable=False,                            comment='Short description')
     summary      = Column('summary',      Text,        nullable=False,                            comment='Long description')
     relation     = Column('relation',     String(32),  nullable=False,                            comment='Relation in Hive that contains the data')
+    rows         = Column('rows',         BigInteger,  nullable=False,                            comment='Total number of rows')
     is_public    = Column('is_public',    Boolean,     nullable=False, default=False,             comment='Whether this Catalog is accessible to anyone')
     is_simulated = Column('is_simulated', Boolean,     nullable=False,                            comment='Whether this Catalog data is simulated')
-    ts_released  = Column('ts_released',  Date,        nullable=True,                             comment='When this Catalog was released')
+    ts_released  = Column('ts_released',  DateTime,    nullable=True,                             comment='When this Catalog was released')
     ts_uploaded  = Column('ts_uploaded',  DateTime,    nullable=False, server_default=func.now(), comment='When this Catalog was uploaded')
 
     # Relationships
@@ -258,7 +318,7 @@ class Query(db.Model):
         RUNNING   = 'PROCESSING'
         SUCCEEDED = 'SUCCEEDED'
         FAILED    = 'FAILED'
-        KILLED    = 'KILLED'
+        KILLED    = 'CANCELLED'
         UNKNOWN   = 'UNKNOWN'
         
         def is_final(self):
