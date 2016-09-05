@@ -135,7 +135,8 @@ def echo_socket(ws):
                 break
     
     except TypeError:
-        if ws.closed:
-            return
-        else:
+        if not ws.closed:
             raise
+    
+    finally:
+        cursor.close()

@@ -11,32 +11,26 @@ from sqlalchemy.sql import func
 
 from cosmohub.api import db, api_rest, mail, recaptcha
 
-from ..marshal import schema
+from .. import fields
 from ..db import model
 from ..db.session import transactional_session, retry_on_serializable_error
-from ..security import (
-    auth_required,
-    PRIV_USER,
-    PRIV_FRESH_LOGIN,
-    PRIV_PASSWORD_RESET,
-    PRIV_EMAIL_CONFIRM,
-)
+from ..security import auth_required, Privilege, Token
 
 log = logging.getLogger(__name__)
 
 class UserItem(Resource):
-    @auth_required(PRIV_USER)
+    @auth_required(Privilege(['user']))
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
             user = session.query(model.User).options(
                     joinedload('groups')
                 ).filter_by(
-                    id=getattr(g, 'current_user')['id']
+                    id=g.session['user'].id
                 ).one()
 
-            return marshal(user, schema.User)
+            return marshal(user, fields.User)
 
-    @auth_required( (PRIV_USER & PRIV_FRESH_LOGIN) | PRIV_PASSWORD_RESET )
+    @auth_required( Privilege(['user'], ['fresh']) | Privilege(['password_reset']) )
     def patch(self):
         @retry_on_serializable_error
         def patch_user(user_id, attrs):
@@ -47,9 +41,9 @@ class UserItem(Resource):
                     id=user_id
                 ).one()
 
-                priv = PRIV_USER & PRIV_FRESH_LOGIN
-                priv |= PRIV_PASSWORD_RESET(zlib.adler32(user.password.hash))
-                if not priv.can():
+                privilege = Privilege(['user'], ['fresh'])
+                privilege |= Privilege(['password_reset'], [zlib.adler32(user.password.hash)])
+                if not privilege.can(g.session['privilege']):
                     raise http_exc.Unauthorized
                 
                 for key, value in attrs.iteritems():
@@ -60,10 +54,13 @@ class UserItem(Resource):
                 if 'email' in attrs:
                     user.ts_email_confirmed = None
                     
-                    token = marshal(user, schema.Token)
-                    token.update({ 'privs' : [PRIV_EMAIL_CONFIRM(zlib.adler32(user.email)).to_list()]})
-                    token = current_app.jwt.dumps(token)
-                    url = api_rest.url_for(UserEmailConfirm, auth_token=token, _external=True)
+                    token = Token(
+                        user, 
+                        Privilege(['email_confirm'], [zlib.adler32(user.email)]), 
+                        expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
+                    )
+                    
+                    url = api_rest.url_for(UserEmailConfirm, auth_token=token.dump(), _external=True)
                     
                     mail.send_message(
                         subject = 'confirm your mail',
@@ -71,8 +68,6 @@ class UserItem(Resource):
                         body = render_template('email_confirmation.txt', user=user, url=url),
                         html = render_template('email_confirmation.html', user=user, url=url),
                     )
-                
-                return marshal(user, schema.User)
 
         parser = reqparse.RequestParser()
         parser.add_argument('name',     store_missing=False)
@@ -80,9 +75,7 @@ class UserItem(Resource):
         parser.add_argument('password', store_missing=False)
         attrs = parser.parse_args(strict=True)
 
-        g.current_user = patch_user(getattr(g, 'current_user')['id'], attrs)
-
-        return g.current_user
+        patch_user(g.session['user'].id, attrs)
 
     def post(self):
         @retry_on_serializable_error
@@ -107,11 +100,13 @@ class UserItem(Resource):
                 session.add(user)
                 session.flush()
                 
-                token = marshal(user, schema.Token)
-                token.update({ 'privs' : [PRIV_EMAIL_CONFIRM(zlib.adler32(user.email)).to_list()]})
-                token = current_app.jwt.dumps(token)
+                token = Token(
+                    user, 
+                    Privilege(['email_confirm'], [zlib.adler32(user.email)]), 
+                    expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
+                )
                 
-                url += '?' + urllib.urlencode({ 'auth_token' : token })
+                url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
                 
                 mail.send_message(
                     subject = 'Welcome to CosmoHub: Account activation',
@@ -120,7 +115,7 @@ class UserItem(Resource):
                     html = render_template('new_user.html', user=user, url=url),
                 )
                 
-                return marshal(user, schema.User)
+                return marshal(user, fields.User)
 
         parser = reqparse.RequestParser()
         parser.add_argument('name',        store_missing=False)
@@ -139,7 +134,7 @@ class UserItem(Resource):
         
         return post_user(attrs), 201
 
-    @auth_required(PRIV_USER & PRIV_FRESH_LOGIN)
+    @auth_required(Privilege(['user'], ['fresh']))
     def delete(self):
         @retry_on_serializable_error
         def delete_user(user_id):
@@ -150,14 +145,14 @@ class UserItem(Resource):
                 
                 session.remove(user)
         
-        delete_user(getattr(g, 'current_user')['id'])
+        delete_user(g.session['user'].id)
 
         return '', 204
 
 api_rest.add_resource(UserItem, '/user')
 
 class UserEmailConfirm(Resource):
-    @auth_required(PRIV_EMAIL_CONFIRM)
+    @auth_required(Privilege(['email_confirm']))
     def get(self):
         @retry_on_serializable_error
         def email_confirm(user_id):
@@ -165,20 +160,20 @@ class UserEmailConfirm(Resource):
                 user = session.query(model.User).options(
                     joinedload('groups')
                 ).filter_by(
-                    id=getattr(g, 'current_user')['id']
+                    id=g.session['user'].id
                 ).one()
                 
-                priv = PRIV_EMAIL_CONFIRM(zlib.adler32(user.email))
-                if not priv.can():
+                privilege = Privilege(['email_confirm'], [zlib.adler32(user.email)])
+                if not privilege.can(g.session['privilege']):
                     raise http_exc.Forbidden
                 
                 user.ts_email_confirmed = func.now()
                 
                 session.flush()
                 
-                return marshal(user, schema.User)
+                return marshal(user, fields.User)
         
-        return email_confirm(getattr(g, 'current_user')['id'])
+        return email_confirm(g.session['user'].id)
 
 api_rest.add_resource(UserEmailConfirm, '/user/email_confirm')
 
@@ -198,10 +193,13 @@ class UserPasswordReset(Resource):
                 email=attrs['email']
             ).one()
             
-            token = marshal(user, schema.Token)
-            token.update({ 'privs' : [PRIV_PASSWORD_RESET(zlib.adler32(user.password.hash)).to_list()]})
-            token = current_app.jwt.dumps(token)
-            url = api_rest.url_for(UserPasswordReset, auth_token=token, _external=True)
+            token = Token(
+                user, 
+                Privilege(['password_reset'], [zlib.adler32(user.password.hash)]), 
+                expires_in=current_app.config['TOKEN_EXPIRES_IN']['password_reset'],
+            )
+            
+            url = api_rest.url_for(UserPasswordReset, auth_token=token.dump(), _external=True)
             
             mail.send_message(
                 subject = 'Password Reset',

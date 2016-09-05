@@ -36,7 +36,7 @@ def echo_socket(ws):
         while not ws.closed:
             with transactional_session(db.session) as session:
                 queries = session.query(model.Query).filter_by(
-                    user_id = getattr(g, 'current_user')['id'],
+                    user_id = g.session['user'].id,
                     status = 'PROCESSING'
                 ).order_by(
                     model.Query.ts_submitted

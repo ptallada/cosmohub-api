@@ -19,6 +19,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add `ts_last_updated` with a trigger to ACL table. (Pau Tallada)
 - Retrieve redirect URL from frontend in user registration. (Pau Tallada)
 - Track new and completed queries on `queries` websocket. (Pau Tallada)
+- Refactor all authentication code. (Pau Tallada)
 
 ### Fixed
 - Return partitioned table statistics. (Pau Tallada)

@@ -15,7 +15,7 @@ from cosmohub.api import db, api_rest
 
 from ..db import model
 from ..db.session import transactional_session
-from ..security import auth_required, PRIV_USER, PRIV_DOWNLOAD
+from ..security import auth_required, Privilege
 from ..io.hdfs import HDFSPathReader
 
 def create_content_range(range_header, length):
@@ -111,7 +111,7 @@ class BaseDownload(object):
         return response
 
 class DatasetReadmeDownload(BaseDownload, Resource):
-    decorators = [auth_required(PRIV_USER | PRIV_DOWNLOAD('dataset'))]
+    decorators = [auth_required(Privilege(['user']) | Privilege(['download'], ['dataset']))]
 
     @staticmethod
     def _get_path(item):
@@ -130,13 +130,13 @@ class DatasetReadmeDownload(BaseDownload, Resource):
                     'catalog', 'groups', 'users'
                 ).filter(
                     model.Dataset.id == id_,
-                    model.User.id == getattr(g, 'current_user')['id'],
+                    model.User.id == g.session['user'].id,
                 ).first()
 
                 if not user:
-                    priv = PRIV_DOWNLOAD('dataset', dataset.id)
+                    priv = Privilege(['download'], ['dataset'], [dataset.id])
                     
-                    if not priv.can():
+                    if not priv.can(g.session['privilege']):
                         raise http_exc.Forbidden
             
             range_header = request.headers.get('Range', None)
@@ -148,7 +148,7 @@ class DatasetReadmeDownload(BaseDownload, Resource):
 api_rest.add_resource(DatasetReadmeDownload, '/downloads/datasets/<int:id_>/readme')
 
 class FileResource(Resource):
-    decorators = [auth_required(PRIV_USER | PRIV_DOWNLOAD('file'))]
+    decorators = [auth_required(Privilege(['user']) | Privilege(['download'], ['file']))]
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
@@ -168,13 +168,13 @@ class FileResource(Resource):
                     'groups', 'catalogs', 'files'
                 ).filter(
                     model.File.id == id_,
-                    model.User.id == getattr(g, 'current_user')['id'],
+                    model.User.id == g.session['user'].id,
                 ).first()
 
                 if not user:
-                    priv = PRIV_DOWNLOAD('file', file_.id)
+                    priv = Privilege(['download'], ['file'], [file_.id])
                     
-                    if not priv.can():
+                    if not priv.can(g.session['privilege']):
                         raise http_exc.Forbidden
             
             range_header = request.headers.get('Range', None)
@@ -203,7 +203,7 @@ class FileContentsDownload(BaseDownload, FileResource):
 api_rest.add_resource(FileContentsDownload, '/downloads/files/<int:id_>/contents')
 
 class QueryDownload(BaseDownload, Resource):
-    decorators = [auth_required(PRIV_USER | PRIV_DOWNLOAD('query'))]
+    decorators = [auth_required(Privilege(['user']) | Privilege(['download'], ['query']))]
 
     def _headers(self, path):
         headers = super(QueryDownload, self)._headers(path)
@@ -227,15 +227,15 @@ class QueryDownload(BaseDownload, Resource):
                 'queries'
             ).filter(
                 model.Query.id == id_,
-                model.User.id == getattr(g, 'current_user')['id'],
+                model.User.id == g.session['user'].id,
                 
             ).first()
 
             if not user:
                 raise http_exc.Forbidden
             
-            priv = PRIV_USER | PRIV_DOWNLOAD('query', query.id)
-            if not priv.can():
+            priv = Privilege(['user']) | Privilege(['download'], ['query'], [query.id])
+            if not priv.can(g.session['privilege']):
                 raise http_exc.Forbidden
 
             range_header = request.headers.get('Range', None)

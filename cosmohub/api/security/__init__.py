@@ -1,3 +1,5 @@
+import zlib
+
 from flask import g, jsonify
 from flask_httpauth import MultiAuth
 from functools import wraps
@@ -7,14 +9,11 @@ from .authentication import (
     basic_auth,
     token_auth,
 )
-from .authorization import (
-    PRIV_USER,
-    PRIV_ADMIN,
-    PRIV_FRESH_LOGIN,
-    PRIV_DOWNLOAD,
-    PRIV_PASSWORD_RESET,
-    PRIV_EMAIL_CONFIRM,
-)
+from .privilege import Privilege
+from .token import adler32, Token
+
+def adler32(data):
+    return "%08x" % (zlib.adler32(data) & 0xFFFFFFFF)
 
 auth = MultiAuth(basic_auth, token_auth)
 
@@ -23,7 +22,7 @@ def auth_required(priv):
         @wraps(f) 
         @auth.login_required
         def wrapped(*args, **kwargs):
-            if not priv.can():
+            if not priv.can(g.session['privilege']):
                 raise http_exc.Forbidden
             
             return f(*args, **kwargs)

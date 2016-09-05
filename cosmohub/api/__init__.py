@@ -66,15 +66,24 @@ app.formats = {
 # Set up token signer
 app.jwt = TimedJSONWebSignatureSerializer(app.config['SECRET_KEY'])
 
+@app.before_request
+def _clear_session():
+    g.session = {
+        'user' : None,
+        'privilege' : None,
+        'token' : None,
+    }
+
 # Add/refresh token to every authenticated request 
+from .security import Token, Privilege
+# FIXME: refactor authentication code to remove cicle import on db
 @app.after_request
 def _refresh_token(response):
-    from .security.authentication import refresh_token
+    if g.session['privilege'] and Privilege(['user']).can(g.session['privilege']):
+        response.headers['X-Token'] = Token(g.session['user'], g.session['privilege']).dump()
+    else:
+        response.headers['X-Token'] = g.session['token']
     
-    current_privs = getattr(g, 'current_privs', None)
-    token = refresh_token(current_privs)
-    if token:
-        response.headers['X-Token'] = app.jwt.dumps(token)
     return response
 
 # Configure REST API Blueprint

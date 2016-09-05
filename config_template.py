@@ -36,7 +36,12 @@ SECRET_KEY = binascii.unhexlify(
     '0000000000000000000000000000000000000000000000000000000000000000'
 )
 # Token expiration in seconds
-TOKEN_EXPIRE_IN = 3600
+TOKEN_EXPIRES_IN = {
+    'email_confirm'  : float('+inf'),
+    'password_reset' : 2*24*60*60,
+    'download'       : float('+inf'),
+}
+TOKEN_EXPIRES_IN_DEFAULT = 1*60*60
 
 # Password settings
 PASSLIB_CONTEXT = {
@@ -79,3 +84,8 @@ MAIL_DEFAULT_SENDER = 'CosmoHub <cosmohub@pic.es>'
 RECAPTCHA_ENABLED = True
 RECAPTCHA_SITE_KEY = ''
 RECAPTCHA_SECRET_KEY = ''
+
+if DEBUG:
+    GA_TRACKING_ID = ''
+else:
+    GA_TRACKING_ID = ''

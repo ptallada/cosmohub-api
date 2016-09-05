@@ -1,12 +1,5 @@
 from flask_restful import fields
 
-from .fields import (
-    DownloadQueryURL,
-    DownloadDatasetReadmeURL,
-    DownloadFileReadmeURL,
-    DownloadFileContentsURL,
-)
-
 User = {
     'id'                 : fields.Integer,
     'name'               : fields.String,
@@ -36,7 +29,6 @@ Dataset = {
     'description'     : fields.String,
     'rows'            : fields.Integer,
     'recipe'          : fields.Raw,
-    'download_readme' : DownloadDatasetReadmeURL(attribute='id'),
     'ts_defined'      : fields.DateTime('iso8601'),
 }
 
@@ -46,8 +38,6 @@ File = {
     'version'           : fields.String,
     'description'       : fields.String,
     'size'              : fields.Integer,
-    'download_readme'   : DownloadFileReadmeURL(attribute='id'),
-    'download_contents' : DownloadFileContentsURL(attribute='id'),
     'ts_uploaded'       : fields.DateTime('iso8601'),
 }
 
@@ -70,10 +60,9 @@ Query = {
     'ts_submitted'     : fields.DateTime('iso8601'),
     'ts_started'       : fields.DateTime('iso8601'),
     'ts_finished'      : fields.DateTime('iso8601'),
-    'download_results' : DownloadQueryURL(attribute='id'),
 }
 
-Token = {
+UserToken = {
     'id'         : fields.Integer,
     'name'       : fields.String,
     'email'      : fields.String,

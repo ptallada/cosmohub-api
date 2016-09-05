@@ -11,27 +11,39 @@ from werkzeug import exceptions as http_exc
 
 from cosmohub.api import db, api_rest
 
-from ..marshal import schema
+from .downloads import QueryDownload
+from .. import fields
 from ..db import model
 from ..db.session import transactional_session, retry_on_serializable_error
 from ..io.hdfs import HDFSPathReader
-from ..security import auth_required, PRIV_USER
+from ..security import auth_required, Privilege, Token
 from ..utils import webhcat
 
 log = logging.getLogger(__name__)
 
 class QueryCollection(Resource):
-    decorators = [auth_required(PRIV_USER)]
+    decorators = [auth_required(Privilege(['user']))]
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
             queries = session.query(model.Query).join(
                 'user'
             ).filter(
-                model.User.id == getattr(g, 'current_user')['id'],
+                model.User.id == g.session['user'].id,
             ).all()
-
-            return marshal(queries, schema.Query)
+            
+            data = marshal(queries, fields.Query)
+            for query in data:
+                token = Token(
+                    g.session['user'],
+                    Privilege(['download'], ['query'], [query['id']]),
+                    expires_in=current_app.config['TOKEN_EXPIRES_IN']['download'],
+                )
+                    
+                url = api_rest.url_for(QueryDownload, id_=query['id'], auth_token=token.dump(), _external=True)
+                query['download_results'] = url
+            
+            return data
 
     def post(self):
         @retry_on_serializable_error
@@ -45,7 +57,7 @@ class QueryCollection(Resource):
             try:
                 with transactional_session(db.session) as session:
                     user = session.query(model.User).filter_by(
-                        id=getattr(g, 'current_user')['id']
+                        id=g.session['user'].id
                     ).one()
                     
                     query = model.Query(
@@ -68,7 +80,7 @@ class QueryCollection(Resource):
                         callback_url = api_rest.url_for(QueryCallback, id_=query.id, _external=True)
                     )
                     
-                    return marshal(query, schema.Query)
+                    return marshal(query, fields.Query)
             
             except:
                 try:
@@ -135,7 +147,7 @@ def finish_query(query, status):
     query.size = data.seek(0, io.SEEK_END)
 
 class QueryCancel(Resource):
-    decorators = [auth_required(PRIV_USER)]
+    decorators = [auth_required(Privilege(['user']))]
 
     def post(self, id_):
         hive_rest=webhcat.Hive(
