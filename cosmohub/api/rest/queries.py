@@ -3,13 +3,14 @@ import logging
 import os
 
 from datetime import datetime
-from flask import g, current_app
+from flask import g, current_app, render_template
 from flask_restful import Resource, marshal, reqparse
 from pyhdfs import HdfsClient
 from pyhive import hive
+from sqlalchemy.orm import joinedload
 from werkzeug import exceptions as http_exc 
 
-from cosmohub.api import db, api_rest
+from cosmohub.api import db, api_rest, mail
 
 from .downloads import QueryDownload
 from .. import fields
@@ -181,16 +182,35 @@ class QueryCallback(Resource):
         @retry_on_serializable_error
         def check_query(id_):
             with transactional_session(db.session) as session:
-                query = session.query(model.Query).filter_by(
+                query = session.query(model.Query).options(
+                    joinedload('user')
+                ).filter_by(
                     id=id_,
-                ).with_for_update().one()
+                ).with_for_update(of=model.Query).one()
                 
                 if model.Query.Status(query.status).is_final():
                     return
                 
                 status = hive_rest.status(query.job_id)
                 
-                return finish_query(query, status)
+                finish_query(query, status)
+                
+                session.flush()
+                
+                token = Token(
+                    query.user,
+                    Privilege(['download'], ['query'], [query.id]),
+                    expires_in=current_app.config['TOKEN_EXPIRES_IN']['download'],
+                )
+                    
+                url = api_rest.url_for(QueryDownload, id_=query.id, auth_token=token.dump(), _external=True)
+                
+                mail.send_message(
+                    subject = 'Your catalog is ready',
+                    recipients = [query.user.email],
+                    body = render_template('query_ready.txt',  user=query.user, url=url),
+                    html = render_template('query_ready.html', user=query.user, url=url),
+                )
 
         check_query(id_)
 
