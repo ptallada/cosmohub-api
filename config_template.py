@@ -81,6 +81,14 @@ MAIL_USERNAME = None
 MAIL_PASSWORD = None
 MAIL_DEFAULT_SENDER = 'CosmoHub <cosmohub@pic.es>'
 
+MAIL_SUBJECTS = {
+    'account_activated' : 'Hi {name}, welcome to CosmoHub!',
+    'email_confirmation' : 'Confirm your email address',
+    'new_user' : 'Activate your CosmoHub account',
+    'password_reset' : 'Reset your CosmoHub password',
+    'query_ready' : 'Your catalog (#{id}) is ready!',
+}
+
 RECAPTCHA_ENABLED = True
 RECAPTCHA_SITE_KEY = ''
 RECAPTCHA_SECRET_KEY = ''

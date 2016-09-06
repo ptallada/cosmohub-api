@@ -67,7 +67,7 @@ class UserItem(Resource):
                 url = api_rest.url_for(UserEmailConfirm, auth_token=token.dump(), _external=True)
                 
                 mail.send_message(
-                    subject = 'confirm your mail',
+                    subject = current_app.config['MAIL_SUBJECTS']['email_confirmation'],
                     recipients = [user.email],
                     body = render_template('email_confirmation.txt', user=user, url=url),
                     html = render_template('email_confirmation.html', user=user, url=url),
@@ -117,7 +117,7 @@ class UserItem(Resource):
             url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
             
             mail.send_message(
-                subject = 'Welcome to CosmoHub: Account activation',
+                subject = current_app.config['MAIL_SUBJECTS']['new_user'],
                 recipients = [user.email],
                 body = render_template('new_user.txt', user=user, url=url),
                 html = render_template('new_user.html', user=user, url=url),
@@ -162,7 +162,7 @@ class UserEmailConfirm(Resource):
             
             if not user.ts_last_login:
                 mail.send_message(
-                    subject = 'Welcome to CosmoHub',
+                    subject = current_app.config['MAIL_SUBJECTS']['account_activated'].format(name=user.name),
                     recipients = [user.email],
                     body = render_template('account_activated.txt',  user=user),
                     html = render_template('account_activated.html', user=user),
@@ -200,7 +200,7 @@ class UserPasswordReset(Resource):
             url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
             
             mail.send_message(
-                subject = 'Password Reset',
+                subject = current_app.config['MAIL_SUBJECTS']['password_reset'],
                 recipients = [user.email],
                 body = render_template('password_reset.txt',  user=user, url=url),
                 html = render_template('password_reset.html', user=user, url=url),
