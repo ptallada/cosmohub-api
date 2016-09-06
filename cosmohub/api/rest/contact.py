@@ -10,9 +10,9 @@ class Contact(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('email', store_missing=False)
-        parser.add_argument('subject', store_missing=False)
-        parser.add_argument('message', store_missing=False)
+        parser.add_argument('email', required=True)
+        parser.add_argument('subject', required=True)
+        parser.add_argument('message', required=True)
         attrs = parser.parse_args(strict=True)
         
         mail.send_message(

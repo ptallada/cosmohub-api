@@ -30,6 +30,7 @@ requires = [
     'flask-sockets',
     'flask-sqlalchemy',
     'flask-logconfig',
+    'humanize',
     'pandas',
     'passlib',
     'psycogreen',

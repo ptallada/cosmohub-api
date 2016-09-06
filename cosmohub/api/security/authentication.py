@@ -4,6 +4,7 @@ from itsdangerous import BadData
 from sqlalchemy.orm import undefer_group
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
+from werkzeug.datastructures import MultiDict
 
 from cosmohub.api import db
 
@@ -20,6 +21,12 @@ def verify_password(username, password):
     # If it does not succeed, continue with username and password
     token = request.args.get('auth_token')
     if token:
+        # FIXME: THIS IS WRONG. request.args is immutable :(
+        # But we have to capture the token or it thinks is a form parameter too
+        # For the next version, auth MUST be a header, no excuses.
+        request.args = MultiDict(request.args)
+        del request.args['auth_token']
+        
         granted = verify_token(token)
         
         if granted:
