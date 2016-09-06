@@ -5,9 +5,11 @@ import os
 
 from setuptools import setup
 
-from cosmohub.api.release import __version__
-
 here = os.path.abspath(os.path.dirname(__file__))
+
+my_globals = {}
+execfile(os.path.join(here, 'cosmohub', 'api', 'release.py'), my_globals)
+
 with open(os.path.join(here, 'README.md')) as f:
     README = f.read()
 with open(os.path.join(here, 'CHANGELOG.md')) as f:
@@ -34,6 +36,7 @@ requires = [
     'psycopg2',
     'pyhive[hive] >= 0.2.0',
     'pyhdfs',
+    'pyparsing',
     'sasl',
     'sqlalchemy',
     'sqlalchemy-utils',
@@ -41,7 +44,7 @@ requires = [
 
 setup(
     name='cosmohub.api',
-    version=__version__,
+    version=my_globals['__version__'],
     description='CosmoHub REST API',
     long_description=README + '\n\n' + CHANGES,
 
