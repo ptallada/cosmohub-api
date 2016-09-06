@@ -1,9 +1,20 @@
-Hi {{ user.name }},
+<p>Hi {{ query.user.name }},</p>
 
-Your query is ready to download at the following link::
+<p>Your catalog request (#{{ query.id }}) has been produced as requested:</p>
 
-{{ url }}
+<ul>
+<li>query: {{ query.sql }}</li>
+<li>duration: {{ str(timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds()))) }}</li>
+<li>size: {{ humanize.naturalsize(query.size, binary=True) }}</li>
+<li>format: {{ query.format }}</li>
+</ul>
 
-Best regards,
+<p>It is available for download at:</p>
 
-The CosmoHub team.
+<p>{{ url }}</p>
+
+<p>Please, remember to follow the citation guide if you use any of this data in
+your research.</p>
+
+<p>Thanks for using CosmoHub, <br>
+The CosmoHub team.</p>

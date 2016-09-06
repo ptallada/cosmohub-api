@@ -1,8 +1,8 @@
 Hi {{ user.name }},
 
-Please open the following link to confirm your email:
+Please open the following link to validate your email address:
 
-{{ link }}
+{{ url }}
 
 Best regards,
 
