@@ -28,6 +28,7 @@ def echo_socket(ws):
         msg = json.loads(ws.receive())
     
         # Do not proceed if there is not valid token
+        g.session = {}
         if not msg['type'] == 'auth' or not verify_token(msg['data']['token']):
             return
         

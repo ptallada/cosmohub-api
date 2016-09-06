@@ -2,7 +2,7 @@ import gevent
 import json
 import pandas as pd
 
-from flask import current_app
+from flask import g, current_app
 from pyhive import hive
 
 from cosmohub.api import ws
@@ -39,7 +39,7 @@ def _check_syntax(ws, cursor, sql):
 
 def _execute_query(ws, cursor, running, sql):
     try:
-        sql = "SELECT * FROM ( {0} ) AS t LIMIT 10000".format(sql)
+        sql = "SELECT * FROM ( {0} ) AS t LIMIT 10001".format(sql)
         cursor.execute(sql, async=True)
 
         if not running.is_set():
@@ -47,7 +47,12 @@ def _execute_query(ws, cursor, running, sql):
 
         status = cursor.poll().operationState
         # If user disconnects, stop polling and cancel query
-        while (not ws.closed) and (status != hive.ttypes.TOperationState.FINISHED_STATE):
+        while (not ws.closed) and (status not in [
+            hive.ttypes.TOperationState.FINISHED_STATE,
+            hive.ttypes.TOperationState.CANCELED_STATE,
+            hive.ttypes.TOperationState.CLOSED_STATE,
+            hive.ttypes.TOperationState.ERROR_STATE,
+        ]):
             logs = cursor.fetch_logs()
 
             if logs:
@@ -68,7 +73,16 @@ def _execute_query(ws, cursor, running, sql):
         if ws.closed:
             raise gevent.GreenletExit
 
+        if status != hive.ttypes.TOperationState.FINISHED_STATE:
+            raise Exception('Real-time query failed to complete successfully: %s', sql)
+
         data = cursor.fetchall()
+        
+        limited = False
+        if len(data) > 10000:
+            limited = True
+            data = data[:10000]
+        
         # col[0][2:] : Remove 't.' prefix from column names
         cols = [col[0][2:] for col in cursor.description]
         df = pd.DataFrame(data, columns=cols)
@@ -77,6 +91,7 @@ def _execute_query(ws, cursor, running, sql):
             'type' : 'query',
             'data' : {
                 'resultset' : df.to_dict('list'),
+                'limited' : limited,
             }
         }))
 
@@ -106,6 +121,7 @@ def echo_socket(ws):
         msg = json.loads(ws.receive())
         
         # Do not proceed if there is not valid token
+        g.session = {}
         if not msg['type'] == 'auth' or not verify_token(msg['data']['token']):
             return
 
