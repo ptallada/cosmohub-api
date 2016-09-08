@@ -12,6 +12,7 @@ from sqlalchemy.orm import (
     relationship,
     backref,
 )
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.schema import (
     ForeignKeyConstraint,
     PrimaryKeyConstraint,
@@ -65,16 +66,12 @@ class User(db.Model):
     ts_last_login      = Column('ts_last_login',      DateTime,   nullable=True,                             comment='Last login timestamp')
 
     # Relationships
-    groups = relationship('Group',
+    granted_groups = relationship('Group',
         secondary=lambda: ACL.__table__, collection_class=set,
         primaryjoin='and_(User.id==ACL._user_id, ACL.is_granted==True)',
-        backref=backref('users', collection_class=set, passive_deletes=True)
+        backref=backref('allowed_users', collection_class=set, passive_deletes=True)
     )
-
-    all_groups = relationship('Group',
-        secondary=lambda: ACL.__table__, collection_class=set,
-    )
-
+    
     @hybrid_property
     def id(self):
         return self._id
@@ -103,11 +100,19 @@ class ACL(db.Model):
     )
 
     # Columns
-    _user_id        = Column('user_id',         Integer,  nullable=False,                            comment='User unique identifier')
-    _group_id       = Column('group_id',        Integer,  nullable=False,                            comment='Group unique identifier')
-    ts_created      = Column('ts_created',      DateTime, nullable=False, server_default=func.now(), comment='When this entry was created')
-    is_granted      = Column('is_granted',      Boolean,  nullable=True,                             comment='Whether this User has access to this Group')
-    ts_last_updated = Column('ts_last_updated', DateTime, nullable=True,                             comment='When this entry was last updated')
+    _user_id     = Column('user_id',      Integer,  nullable=False,                            comment='User unique identifier')
+    _group_id    = Column('group_id',     Integer,  nullable=False,                            comment='Group unique identifier')
+    ts_requested = Column('ts_requested', DateTime, nullable=False, server_default=func.now(), comment='When access to this group was requested')
+    is_granted   = Column('is_granted',   Boolean,  nullable=True,                             comment='Whether this User has access to this Group')
+    ts_resolved  = Column('ts_resolved',  DateTime, nullable=True,                             comment='When access request was granted or denied')
+
+    # Relationships
+    group = relationship('Group',
+        backref=backref('acls', collection_class=set, passive_deletes=True)
+    )
+    user = relationship('User',
+        backref=backref('acls', collection_class=attribute_mapped_collection('group'), passive_deletes=True)
+    )
 
     def __repr__(self):
         return u"%s(user_id=%s, group_id=%s, is_granted=%s)" % (
@@ -122,19 +127,20 @@ event.listen(
     "after_create",
     DDL(
         textwrap.dedent("""\
-            CREATE OR REPLACE FUNCTION acl__ts_last_updated__before_update()
+            CREATE OR REPLACE FUNCTION acl__ts_resolved__before_update()
             RETURNS TRIGGER AS $$
             BEGIN
-               NEW.ts_last_updated = now();
+               NEW.ts_resolved = now();
                RETURN NEW;
             END;
             $$ language 'plpgsql' VOLATILE;
             
-            CREATE TRIGGER acl__ts_last_updated__before_update
+            CREATE TRIGGER acl__ts_resolved__before_update
             BEFORE UPDATE
             ON acl
             FOR EACH ROW
-            EXECUTE PROCEDURE acl__ts_last_updated__before_update();
+            WHEN (NEW.is_granted IS NOT NULL)
+            EXECUTE PROCEDURE acl__ts_resolved__before_update();
         """)
     )
 )
@@ -144,8 +150,8 @@ event.listen(
     "before_drop",
     DDL(
         textwrap.dedent("""\
-            DROP TRIGGER IF EXISTS acl__ts_last_updated__before_update ON acl;
-            DROP FUNCTION IF EXISTS acl__ts_last_updated__before_update();
+            DROP TRIGGER IF EXISTS acl__ts_resolved__before_update ON acl;
+            DROP FUNCTION IF EXISTS acl__ts_resolved__before_update();
         """)
     )
 )
@@ -163,9 +169,10 @@ class Group(db.Model):
     )
 
     # Columns
-    _id        = Column('id',         Integer,    nullable=False,                            comment='Group unique identifier')
-    name       = Column('name',       String(32), nullable=False,                            comment='Name')
-    ts_created = Column('ts_created', DateTime,   nullable=False, server_default=func.now(), comment='When this Group was created')
+    _id         = Column('id',          Integer,     nullable=False,                            comment='Group unique identifier')
+    name        = Column('name',        String(32),  nullable=False,                            comment='Name')
+    description = Column('description', String(256), nullable=False,                            comment='Short description')
+    ts_created  = Column('ts_created',  DateTime,    nullable=False, server_default=func.now(), comment='When this Group was created')
 
     @hybrid_property
     def id(self):

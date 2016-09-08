@@ -5,7 +5,7 @@ import pandas as pd
 from flask import g, current_app
 from pyhive import hive
 
-from cosmohub.api import ws
+from cosmohub.api import app, ws
 
 from ..security.authentication import verify_token
 from ..utils import hive_progress
@@ -47,7 +47,7 @@ def _execute_query(ws, cursor, running, sql):
 
         status = cursor.poll().operationState
         # If user disconnects, stop polling and cancel query
-        while (not ws.closed) and (status not in [
+        while ws.connected and (status not in [
             hive.ttypes.TOperationState.FINISHED_STATE,
             hive.ttypes.TOperationState.CANCELED_STATE,
             hive.ttypes.TOperationState.CLOSED_STATE,
@@ -70,7 +70,7 @@ def _execute_query(ws, cursor, running, sql):
             status = cursor.poll().operationState
 
         # If user disconnects, stop polling and cancel query
-        if ws.closed:
+        if not ws.connected:
             raise gevent.GreenletExit
 
         if status != hive.ttypes.TOperationState.FINISHED_STATE:
@@ -102,16 +102,17 @@ def _execute_query(ws, cursor, running, sql):
         running.clear()
 
 @ws.route('/sockets/catalog')
-def echo_socket(ws):
-    cursor = hive.connect(
-        current_app.config['HIVE_HOST'],
-        username='jcarrete',
-        database=current_app.config['HIVE_DATABASE']
-    ).cursor()
-    
-    sql = "SET tez.queue.name={queue}".format(
-        queue = current_app.config['HIVE_YARN_QUEUE']
-    )
+def catalog(ws):
+    with app.request_context(ws.environ):
+        cursor = hive.connect(
+            current_app.config['HIVE_HOST'],
+            username='jcarrete',
+            database=current_app.config['HIVE_DATABASE']
+        ).cursor()
+        
+        sql = "SET tez.queue.name={queue}".format(
+            queue = current_app.config['HIVE_YARN_QUEUE']
+        )
     cursor.execute(sql, async=False)
     
     running = gevent.event.Event()
@@ -125,7 +126,7 @@ def echo_socket(ws):
         if not msg['type'] == 'auth' or not verify_token(msg['data']['token']):
             return
 
-        while not ws.closed:
+        while ws.connected:
             msg = json.loads(ws.receive())
         
             if msg['type'] == 'syntax':
@@ -149,10 +150,6 @@ def echo_socket(ws):
     
             else:
                 break
-    
-    except TypeError:
-        if not ws.closed:
-            raise
     
     finally:
         cursor.close()

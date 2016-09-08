@@ -4,7 +4,8 @@ import mimetypes
 import os
 import werkzeug.exceptions as http_exc
 
-from flask import g, current_app, request, Response
+from datetime import timedelta
+from flask import g, current_app, request, Response, render_template_string
 from flask_restful import Resource
 from pyhdfs import HdfsClient
 from sqlalchemy.orm import joinedload
@@ -127,7 +128,7 @@ class DatasetReadmeDownload(BaseDownload, Resource):
 
             if not dataset.catalog.is_public:
                 user = session.query(model.Dataset).join(
-                    'catalog', 'groups', 'users'
+                    'catalog', 'groups', 'allowed_users'
                 ).filter(
                     model.Dataset.id == id_,
                     model.User.id == g.session['user'].id,
@@ -165,7 +166,7 @@ class FileResource(Resource):
 
             if not is_public:
                 user = session.query(model.User).join(
-                    'groups', 'catalogs', 'files'
+                    'granted_groups', 'catalogs', 'files'
                 ).filter(
                     model.File.id == id_,
                     model.User.id == g.session['user'].id,

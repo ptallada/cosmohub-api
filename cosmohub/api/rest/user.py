@@ -2,7 +2,6 @@ import logging
 import urllib
 import urlparse
 import werkzeug.exceptions as http_exc
-import zlib
 
 from flask import g, current_app, render_template, request
 from flask_restful import Resource, reqparse, marshal
@@ -14,7 +13,7 @@ from cosmohub.api import db, api_rest, mail, recaptcha
 from .. import fields
 from ..db import model
 from ..db.session import transactional_session, retry_on_serializable_error
-from ..security import auth_required, Privilege, Token
+from ..security import adler32, auth_required, Privilege, Token
 
 log = logging.getLogger(__name__)
 
@@ -23,30 +22,43 @@ class UserItem(Resource):
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
             user = session.query(model.User).options(
-                    joinedload('groups')
+                    joinedload('acls')
                 ).filter_by(
                     id=g.session['user'].id
                 ).one()
-
+            
+            groups = session.query(model.Group).all()
+            
+            user.groups = []
+            for group in groups:
+                data = marshal(group, fields.Group)
+                if group in user.acls:
+                    data.update(marshal(user.acls[group], fields.ACL))
+                user.groups.append(data)
+            
             return marshal(user, fields.User)
-
+    
     @auth_required( Privilege(['user'], ['fresh']) | Privilege(['password_reset']) )
     def patch(self):
         parser = reqparse.RequestParser()
         parser.add_argument('name', store_missing=False)
         parser.add_argument('email', store_missing=False)
         parser.add_argument('password', store_missing=False)
+        parser.add_argument('redirect_to', store_missing=False)
+
         attrs = parser.parse_args(strict=True)
 
+        url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['redirect_to'])
+
         with transactional_session(db.session) as session:
-            user = session.query(model.User).join(
-                model.User.groups
+            user = session.query(model.User).options(
+                joinedload('groups')
             ).filter_by(
                 id=g.session['user'].id
-            ).with_for_update().one()
-
+            ).with_for_update(of=model.User).one()
+            
             privilege = Privilege(['user'], ['fresh'])
-            privilege |= Privilege(['password_reset'], [zlib.adler32(user.password.hash)])
+            privilege |= Privilege(['password_reset'], [adler32(user.password.hash)])
             if not privilege.can(g.session['privilege']):
                 raise http_exc.Unauthorized
             
@@ -60,11 +72,11 @@ class UserItem(Resource):
                 
                 token = Token(
                     user, 
-                    Privilege(['email_confirm'], [zlib.adler32(user.email)]), 
+                    Privilege(['email_confirm'], [adler32(user.email)]), 
                     expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
                 )
                 
-                url = api_rest.url_for(UserEmailConfirm, auth_token=token.dump(), _external=True)
+                url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
                 
                 mail.send_message(
                     subject = current_app.config['MAIL_SUBJECTS']['email_confirmation'],
@@ -78,7 +90,7 @@ class UserItem(Resource):
         parser.add_argument('name', required=True)
         parser.add_argument('email', required=True)
         parser.add_argument('password', required=True)
-        parser.add_argument('groups', required=True, action='append')
+        parser.add_argument('requested_groups', required=True, action='append')
         parser.add_argument('recaptcha', required=True)
         parser.add_argument('redirect_to', required=True)
 
@@ -92,25 +104,25 @@ class UserItem(Resource):
         del attrs['redirect_to']
         
         with transactional_session(db.session) as session:
+            requested_groups = attrs.pop('requested_groups')
+            
             groups = session.query(model.Group).filter(
-                model.Group.name.in_(attrs['groups']),
+                model.Group.name.in_(requested_groups),
             ).with_for_update().all()
 
-            if len(groups) != len(attrs['groups']):
+            if len(groups) != len(requested_groups):
                 raise http_exc.BadRequest("One or more of the requested groups do not exist.")
 
-            # Use the all_groups relationship
-            attrs['all_groups'] = attrs['groups']
-            attrs['all_groups'] = set(groups)
-            del attrs['groups']
-            
             user = model.User(**attrs)
+            for group in groups:
+                user.acls[group] = model.ACL()
+            
             session.add(user)
             session.flush()
             
             token = Token(
                 user, 
-                Privilege(['email_confirm'], [zlib.adler32(user.email)]), 
+                Privilege(['email_confirm'], [adler32(user.email)]), 
                 expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
             )
             
@@ -146,13 +158,13 @@ class UserEmailConfirm(Resource):
     @auth_required(Privilege(['email_confirm']))
     def get(self):
         with transactional_session(db.session) as session:
-            user = session.query(model.User).join(
-                model.User.groups
+            user = session.query(model.User).options(
+                joinedload('groups')
             ).filter_by(
                 id=g.session['user'].id
-            ).with_for_update().one()
+            ).with_for_update(of=model.User).one()
             
-            privilege = Privilege(['email_confirm'], [zlib.adler32(user.email)])
+            privilege = Privilege(['email_confirm'], [adler32(user.email)])
             if not privilege.can(g.session['privilege']):
                 raise http_exc.Forbidden
             
@@ -193,7 +205,7 @@ class UserPasswordReset(Resource):
             
             token = Token(
                 user, 
-                Privilege(['password_reset'], [zlib.adler32(user.password.hash)]), 
+                Privilege(['password_reset'], [adler32(user.password.hash)]), 
                 expires_in=current_app.config['TOKEN_EXPIRES_IN']['password_reset'],
             )
             

@@ -5,7 +5,7 @@ User = {
     'name'               : fields.String,
     'email'              : fields.String,
     'is_admin'           : fields.Boolean,
-    'groups'             : fields.List(fields.String(attribute='name')),
+    'groups'             : fields.Raw,
     'ts_created'         : fields.DateTime('iso8601'),
     'ts_email_confirmed' : fields.DateTime('iso8601'),
     'ts_last_login'      : fields.DateTime('iso8601'),
@@ -66,4 +66,15 @@ UserToken = {
     'id'         : fields.Integer,
     'name'       : fields.String,
     'email'      : fields.String,
+}
+
+Group = {
+    'name'        : fields.String,
+    'description' : fields.String,
+}
+
+ACL = {
+    'ts_requested' : fields.DateTime('iso8601'),
+    'is_granted'   : fields.Boolean,
+    'ts_resolved'  : fields.DateTime('iso8601'),
 }
