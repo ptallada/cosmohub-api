@@ -25,10 +25,13 @@ class CsvBz2File(BaseFormat):
         """
     )
     
-    def __init__(self, fd, description):
+    def __init__(self, fd, description, comments=None):
         """\
         Build the CSV header from the field names
         """
-        super(CsvBz2File, self).__init__(fd, description)
+        super(CsvBz2File, self).__init__(fd, description, comments)
         
-        self._header = bz2.compress(','.join(f[0] for f in description) + '\n')
+        header = '# ' + '\n# '.join(comments.split('\n')) +'\n'
+        header += ','.join(f[0] for f in description) + '\n'
+        
+        self._header = bz2.compress(header.encode('utf8'))

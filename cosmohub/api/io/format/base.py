@@ -9,7 +9,7 @@ class BaseFormat(io.RawIOBase):
     Base class for wrapping raw data into a suitable download format.
     """
     
-    def __init__(self, fd, description):
+    def __init__(self, fd, description, comments=None):
         """\
         :param fd: readable and seekable raw data stream
         :type fd: file object
@@ -18,6 +18,7 @@ class BaseFormat(io.RawIOBase):
         """
         self._fd = fd
         self._description = description
+        self._comments = comments
         
         self._header = ''
         self._footer = ''

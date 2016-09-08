@@ -60,7 +60,8 @@ class AsdfFile(BaseFormat):
         rows = self._fd_length / int(thdu.header['NAXIS1'])
         
         tree = {
-            'catalog' : asdf.Stream([rows], thdu.columns.dtype.newbyteorder('>'))
+            'catalog' : asdf.Stream([rows], thdu.columns.dtype.newbyteorder('>')),
+            'comments' : self._comments,
         }
         
         header = StringIO()

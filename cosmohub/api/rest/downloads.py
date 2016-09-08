@@ -245,7 +245,16 @@ class QueryDownload(BaseDownload, Resource):
                 path = os.path.join(client.get_home_directory(), path)
                 
             reader = HDFSPathReader(client, path)
-            data = current_app.formats[query.format](reader, query.schema)
+            
+            context = {
+                'query' : query,
+                'duration' : timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds())),
+                'user' : user,
+            }
+            
+            comments = render_template_string(current_app.config['QUERY_COMMENTS'], **context)
+            
+            data = current_app.formats[query.format](reader, query.schema, comments)
             path = '{path}.{ext}'.format(path=path, ext=query.format)
             
             return self._build_response(data, path, range_header)
