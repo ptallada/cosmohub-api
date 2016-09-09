@@ -71,6 +71,12 @@ def queries(ws):
                 old_set = new_set.copy()
                 
                 time.sleep(5)
+                
+                # check is websocket still alive
+                msg = ws.recv_nb()
+        
+        except IOError:
+            pass
         
         finally:
             log.info("Closing websocket connection")

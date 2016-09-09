@@ -1,5 +1,5 @@
-import gevent
 import json
+import logging
 import pandas as pd
 
 from flask import g, current_app
@@ -9,6 +9,8 @@ from cosmohub.api import app, ws
 
 from ..security.authentication import verify_token
 from ..utils import hive_progress
+
+log = logging.getLogger(__name__)
 
 def _check_syntax(ws, cursor, sql):
     sql = "SELECT * FROM ( {0} ) AS t LIMIT 0".format(sql)
@@ -37,14 +39,27 @@ def _check_syntax(ws, cursor, sql):
         else:
             raise
 
-def _execute_query(ws, cursor, running, sql):
+class QueryCancelledException(Exception):
+    pass
+
+def _raise_if_cancelled(ws):
+    msg = ws.recv_nb()
+    if not msg:
+        return
+    
+    msg = json.loads(msg)
+    if msg['type'] == 'cancel':
+        raise QueryCancelledException()
+    
+    raise ValueError('Invalid message received')
+
+def _execute_query(ws, cursor, sql):
     try:
         sql = "SELECT * FROM ( {0} ) AS t LIMIT 10001".format(sql)
         cursor.execute(sql, async=True)
-
-        if not running.is_set():
-            raise gevent.GreenletExit
-
+        
+        _raise_if_cancelled(ws)
+        
         status = cursor.poll().operationState
         # If user disconnects, stop polling and cancel query
         while ws.connected and (status not in [
@@ -54,7 +69,9 @@ def _execute_query(ws, cursor, running, sql):
             hive.ttypes.TOperationState.ERROR_STATE,
         ]):
             logs = cursor.fetch_logs()
-
+            
+            _raise_if_cancelled(ws)
+            
             if logs:
                 progress = hive_progress.parse(logs[-1])
                 ws.send(json.dumps({
@@ -64,18 +81,13 @@ def _execute_query(ws, cursor, running, sql):
                     }
                 }))
 
-            if not running.is_set():
-                raise gevent.GreenletExit
-
             status = cursor.poll().operationState
-
-        # If user disconnects, stop polling and cancel query
-        if not ws.connected:
-            raise gevent.GreenletExit
 
         if status != hive.ttypes.TOperationState.FINISHED_STATE:
             raise Exception('Real-time query failed to complete successfully: %s', sql)
-
+        
+        _raise_if_cancelled(ws)
+        
         data = cursor.fetchall()
         
         limited = False
@@ -86,7 +98,9 @@ def _execute_query(ws, cursor, running, sql):
         # col[0][2:] : Remove 't.' prefix from column names
         cols = [col[0][2:] for col in cursor.description]
         df = pd.DataFrame(data, columns=cols)
-
+        
+        _raise_if_cancelled(ws)
+        
         ws.send(json.dumps({
             'type' : 'query',
             'data' : {
@@ -97,9 +111,6 @@ def _execute_query(ws, cursor, running, sql):
 
     except:
         cursor.cancel()
-
-    finally:
-        running.clear()
 
 @ws.route('/sockets/catalog')
 def catalog(ws):
@@ -113,43 +124,47 @@ def catalog(ws):
         sql = "SET tez.queue.name={queue}".format(
             queue = current_app.config['HIVE_YARN_QUEUE']
         )
-    cursor.execute(sql, async=False)
-    
-    running = gevent.event.Event()
-    query = None
-
-    try:
-        msg = json.loads(ws.receive())
+   
+        cursor.execute(sql, async=False)
         
-        # Do not proceed if there is not valid token
-        g.session = {}
-        if not msg['type'] == 'auth' or not verify_token(msg['data']['token']):
-            return
+        try:
+            msg = ws.receive()
+            if not msg:
+                return
 
-        while ws.connected:
-            msg = json.loads(ws.receive())
-        
-            if msg['type'] == 'syntax':
-                if running.is_set():
-                    # Concurrent operations are not supported.
-                    break
-    
-                _check_syntax(ws, cursor, msg['data']['sql'])
-    
-            elif msg['type'] == 'query':
-                if running.is_set():
-                    break
+            msg = json.loads(msg)
+            
+            # Do not proceed if there is not valid token
+            g.session = {}
+            if not msg['type'] == 'auth' or not verify_token(msg['data']['token']):
+                return
+            
+            msg = ws.receive()
+            if not msg:
+                return
+            
+            while ws.connected:
+                msg = json.loads(msg)
+                
+                if msg['type'] == 'syntax':
+                    _check_syntax(ws, cursor, msg['data']['sql'])
+                
+                elif msg['type'] == 'query':
+                    try:
+                        _execute_query(ws, cursor, msg['data']['sql'])
+                    except QueryCancelledException:
+                        pass
+                
                 else:
-                    running.set()
-                    query = gevent.spawn(_execute_query, ws, cursor, running, msg['data']['sql'])
-    
-            elif msg['type'] == 'cancel':
-                if query and running.is_set():
-                    running.clear()
-                    query.join()
-    
-            else:
-                break
-    
-    finally:
-        cursor.close()
+                    break
+                
+                msg = ws.receive()
+                if not msg:
+                    return
+        
+        except IOError:
+            pass
+        
+        finally:
+            log.info("Closing websocket connection")
+            cursor.close()

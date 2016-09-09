@@ -11,7 +11,7 @@ from flask_mail import Mail
 from flask_recaptcha import ReCaptcha
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy, Model as FlaskModel
-from flask_uwsgi_websocket import GeventWebSocket
+from flask_uwsgi_websocket import WebSocket
 from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer
 from pkg_resources import iter_entry_points # @UnresolvedImport
@@ -91,7 +91,7 @@ mod_rest = Blueprint('rest', __name__, url_prefix='/rest')
 api_rest = Api(mod_rest)
 
 # Configure WebSocket extension
-ws = GeventWebSocket(app)
+ws = WebSocket(app)
 
 # Setup global error handlers
 @app.errorhandler(NoResultFound)
