@@ -60,6 +60,7 @@ PASSLIB_CONTEXT = {
 
 # WebHCat settings
 WEBHCAT_BASE_URL = 'http://localhost:50111/templeton/v1/'
+WEBHCAT_CALLBACK_URL = 'http://localhost/rest/queries/callback/{id}'
 WEBHCAT_SCRIPT_COMMON = textwrap.dedent("""\
     SET hive.exec.copyfile.maxsize=1073741824;
     """

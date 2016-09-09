@@ -4,7 +4,7 @@
 
 <ul>
 <li>query: {{ query.sql }}</li>
-<li>duration: {{ str(timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds()))) }}</li>
+<li>duration: {{ duration }} (h:mm:ss)</li>
 <li>size: {{ humanize.naturalsize(query.size, binary=True) }}</li>
 <li>format: {{ query.format }}</li>
 </ul>

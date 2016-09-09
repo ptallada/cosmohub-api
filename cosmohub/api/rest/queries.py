@@ -4,7 +4,7 @@ import logging
 import os
 
 from datetime import datetime, timedelta
-from flask import g, current_app, render_template
+from flask import g, current_app, render_template, render_template_string
 from flask_restful import Resource, marshal, reqparse
 from pyhdfs import HdfsClient
 from pyhive import hive
@@ -78,7 +78,7 @@ class QueryCollection(Resource):
                         query = sql,
                         path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id)),
                         format_ = format_,
-                        callback_url = api_rest.url_for(QueryCallback, id_=query.id, _external=True)
+                        callback_url = current_app.config['WEBHCAT_CALLBACK_URL'].format(id=query.id),
                     )
                     
                     return marshal(query, fields.Query)
@@ -144,7 +144,16 @@ def finish_query(query, status):
         path = os.path.join(client.get_home_directory(), path)
     
     reader = HDFSPathReader(client, path)
-    data = current_app.formats[query.format](reader, query.schema)
+    
+    context = {
+        'query' : query,
+        'duration' : timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds())),
+        'user' : query.user,
+    }
+    
+    comments = render_template_string(current_app.config['QUERY_COMMENTS'], **context)
+    
+    data = current_app.formats[query.format](reader, query.schema, comments)
     query.size = data.seek(0, io.SEEK_END)
 
 class QueryCancel(Resource):
@@ -180,10 +189,10 @@ class QueryCallback(Resource):
         )
         
         with transactional_session(db.session) as session:
-            query = session.query(model.Query).join(
-                model.Query.user,
-            ).filter_by(
+            query = session.query(model.Query).filter_by(
                 id=id_,
+            ).join(
+                model.Query.user,
             ).with_for_update().one()
             
             if model.Query.Status(query.status).is_final():
@@ -205,7 +214,7 @@ class QueryCallback(Resource):
             
             context = {
                 'query' : query,
-                'timedelta' : timedelta,
+                'duration' : timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds())),
                 'humanize' : humanize,
                 'url' : url,
             }
@@ -217,4 +226,4 @@ class QueryCallback(Resource):
                 html = render_template('query_ready.html', **context),
             )
 
-api_rest.add_resource(QueryCallback, '/queries/<int:id_>/callback')
+api_rest.add_resource(QueryCallback, '/queries/callback/<int:id_>')

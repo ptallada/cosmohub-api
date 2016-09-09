@@ -3,7 +3,7 @@ Hi {{ query.user.name }},
 Your catalog request (#{{ query.id }}) has been produced as requested:
 
  - query: {{ query.sql }}
- - duration: {{ str(timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds()))) }}
+ - duration: {{ duration }} (h:mm:ss)
  - size: {{ humanize.naturalsize(query.size, binary=True) }}
  - format: {{ query.format }}
 
