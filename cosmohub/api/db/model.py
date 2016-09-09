@@ -169,10 +169,10 @@ class Group(db.Model):
     )
 
     # Columns
-    _id         = Column('id',          Integer,     nullable=False,                            comment='Group unique identifier')
-    name        = Column('name',        String(32),  nullable=False,                            comment='Name')
-    description = Column('description', String(256), nullable=False,                            comment='Short description')
-    ts_created  = Column('ts_created',  DateTime,    nullable=False, server_default=func.now(), comment='When this Group was created')
+    _id         = Column('id',          Integer,    nullable=False,                            comment='Group unique identifier')
+    name        = Column('name',        String(32), nullable=False,                            comment='Name')
+    description = Column('description', Text,       nullable=False,                            comment='Short description')
+    ts_created  = Column('ts_created',  DateTime,   nullable=False, server_default=func.now(), comment='When this Group was created')
 
     @hybrid_property
     def id(self):
