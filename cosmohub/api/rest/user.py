@@ -48,12 +48,8 @@ class UserItem(Resource):
 
         attrs = parser.parse_args(strict=True)
 
-        url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['redirect_to'])
-
         with transactional_session(db.session) as session:
-            user = session.query(model.User).options(
-                joinedload('groups')
-            ).filter_by(
+            user = session.query(model.User).filter_by(
                 id=g.session['user'].id
             ).with_for_update(of=model.User).one()
             
@@ -75,7 +71,7 @@ class UserItem(Resource):
                     Privilege(['email_confirm'], [adler32(user.email)]), 
                     expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
                 )
-                
+                url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['redirect_to'])
                 url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
                 
                 mail.send_message(
@@ -115,7 +111,7 @@ class UserItem(Resource):
 
             user = model.User(**attrs)
             for group in groups:
-                user.acls[group] = model.ACL()
+                user.acls[group] = model.ACL(group=group, user=user)
             
             session.add(user)
             session.flush()
@@ -146,7 +142,7 @@ class UserItem(Resource):
                     id=user_id
                 ).one()
                 
-                session.remove(user)
+                session.delete(user)
         
         delete_user(g.session['user'].id)
 
@@ -158,9 +154,7 @@ class UserEmailConfirm(Resource):
     @auth_required(Privilege(['email_confirm']))
     def get(self):
         with transactional_session(db.session) as session:
-            user = session.query(model.User).options(
-                joinedload('groups')
-            ).filter_by(
+            user = session.query(model.User).filter_by(
                 id=g.session['user'].id
             ).with_for_update(of=model.User).one()
             
@@ -180,7 +174,7 @@ class UserEmailConfirm(Resource):
                     html = render_template('account_activated.html', user=user),
                 )
             
-            return marshal(user, fields.User)
+            return ''
 
 api_rest.add_resource(UserEmailConfirm, '/user/email_confirm')
 
