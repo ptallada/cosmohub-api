@@ -4,6 +4,7 @@ import textwrap
 
 # Statement for enabling the development environment
 DEBUG = True
+GA_TRACKING_ID = ''
 
 # Define the application directory
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -101,7 +102,8 @@ QUERY_COMMENTS = textwrap.dedent("""\
     """
 )
 
-if DEBUG:
-    GA_TRACKING_ID = ''
-else:
-    GA_TRACKING_ID = ''
+OPBEAT = {
+    'ORGANIZATION_ID': '',
+    'APP_ID': '',
+    'SECRET_TOKEN': '',
+}
