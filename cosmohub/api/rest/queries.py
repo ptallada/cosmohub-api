@@ -44,6 +44,13 @@ class QueryCollection(Resource):
                 url = api_rest.url_for(QueryDownload, id_=query['id'], auth_token=token.dump(), _external=True)
                 query['download_results'] = url
             
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'queries',
+                'ea' : 'list',
+                'ev' : len(data),
+            })
+            
             return data
 
     def post(self):
@@ -80,6 +87,13 @@ class QueryCollection(Resource):
                         format_ = format_,
                         callback_url = current_app.config['WEBHCAT_CALLBACK_URL'].format(id=query.id),
                     )
+                    
+                    g.session['track']({
+                        't' : 'event',
+                        'ec' : 'queries',
+                        'ea' : 'requested',
+                        'el' : query.format,
+                    })
                     
                     return marshal(query, fields.Query)
             
@@ -174,7 +188,15 @@ class QueryCancel(Resource):
                 
                 status = hive_rest.cancel(query.job_id)
                 
-                return finish_query(query, status)
+                finish_query(query, status)
+                
+                g.session['track']({
+                    't' : 'event',
+                    'ec' : 'queries',
+                    'ea' : 'cancelled',
+                    'el' : query.format,
+                    'ev' : int((query.ts_finished - query.ts_started).total_seconds())
+                })
         
         cancel_query(id_)
 
@@ -225,5 +247,13 @@ class QueryCallback(Resource):
                 body = render_template('query_ready.txt', **context),
                 html = render_template('query_ready.html', **context),
             )
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'queries',
+                'ea' : 'completed',
+                'el' : query.format,
+                'ev' : int((query.ts_finished - query.ts_started).total_seconds())
+            })
 
 api_rest.add_resource(QueryCallback, '/queries/callback/<int:id_>')

@@ -1,17 +1,64 @@
+import gevent
 import json
 import logging
+import requests
 import time
 
-from flask import g, current_app
+from flask import g, current_app, request
+from urllib import urlencode
 
 from cosmohub.api import app, db, ws
 
+from .. import release
 from ..db import model
 from ..db.session import transactional_session
 from ..security.authentication import verify_token
 from ..utils import webhcat
 
 log = logging.getLogger(__name__)
+
+def _init_session():
+    g.session = {
+        'user' : None,
+        'privilege' : None,
+        'token' : None,
+    }
+    
+    params = {
+        'v' : 1,
+        'tid' : app.config['GA_TRACKING_ID'],
+        'ds' : 'api',
+        'cid' : 'cosmohub.api {0}'.format(release.__version__),
+        'uip' : request.remote_addr,
+    }
+    
+    if request.headers.get('User-Agent', None):
+        params['ua'] = request.headers.get('User-Agent')
+    
+    if request.referrer:
+        params['dr'] = request.referrer
+    
+    def _send(payload):
+        log.debug('Reporting hits to GA: %s', payload)
+        requests.post(app.config['GA_URL'], data=payload)
+    
+    def _track(hit):
+        payload = params.copy()
+            
+        if g.session['user']:
+            payload['uid'] = g.session['user'].id
+            payload.update(hit)
+
+        body = []
+        for key, data in payload.iteritems():
+            if isinstance(data, basestring):
+                payload[key] = data.encode('utf-8')
+        
+        body.append(urlencode(payload))
+        
+        gevent.spawn(_send, "\n".join(body))
+    
+    g.session['track'] = _track
 
 @ws.route('/sockets/queries')
 def queries(ws):
@@ -27,7 +74,7 @@ def queries(ws):
             msg = json.loads(ws.receive())
             
             # Do not proceed if there is not valid token
-            g.session = {}
+            _init_session()
             if not msg['type'] == 'auth' or not verify_token(msg['data']['token']):
                 return
             
@@ -67,6 +114,14 @@ def queries(ws):
                         'type' : 'progress',
                         'data' : data,
                     }))
+                    
+                    g.session['track']({
+                        't' : 'event',
+                        'ec' : 'queries',
+                        'ea' : 'progress',
+                        'el' : g.session['user'].id,
+                        'ev' : len(data),
+                    })
                 
                 old_set = new_set.copy()
                 

@@ -29,6 +29,13 @@ class CatalogCollection(Resource):
 
             catalogs = public.union(restricted).all()
 
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'catalogs',
+                'ea' : 'list',
+                'ev' : len(catalogs),
+            })
+
             return marshal(catalogs, fields.CatalogCollection)
 
 api_rest.add_resource(CatalogCollection, '/catalogs')
@@ -81,6 +88,13 @@ class CatalogItem(Resource):
                 file_['download_readme'] = url
                 url = api_rest.url_for(FileContentsDownload, id_=file_['id'], auth_token=token.dump(), _external=True)
                 file_['download_contents'] = url
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'catalogs',
+                'ea' : 'list',
+                'el' : catalog.id,
+            })
             
             return data
 

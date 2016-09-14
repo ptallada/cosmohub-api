@@ -144,6 +144,13 @@ class DatasetReadmeDownload(BaseDownload, Resource):
             path = self._get_path(dataset)
             reader = HDFSPathReader(self._create_client(), path)
             
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'downloads',
+                'ea' : 'dataset_readme',
+                'el' : dataset.id,
+            })
+            
             return self._build_response(reader, path, range_header)
 
 api_rest.add_resource(DatasetReadmeDownload, '/downloads/datasets/<int:id_>/readme')
@@ -182,9 +189,18 @@ class FileResource(Resource):
             path = self._get_path(file_)
             reader = HDFSPathReader(self._create_client(), path)
             
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'downloads',
+                'ea' : self._track_action,
+                'el' : file.id,
+            })
+            
             return self._build_response(reader, path, range_header)
 
 class FileReadmeDownload(BaseDownload, FileResource):
+    _track_action = 'file_readme'
+    
     @staticmethod
     def _get_path(item):
         return os.path.join(current_app.config['DOWNLOADS_BASE_DIR'], item.path_readme)
@@ -192,6 +208,8 @@ class FileReadmeDownload(BaseDownload, FileResource):
 api_rest.add_resource(FileReadmeDownload, '/downloads/files/<int:id_>/readme')
 
 class FileContentsDownload(BaseDownload, FileResource):
+    _track_action = 'file_contents'
+    
     def _headers(self, path):
         headers = super(FileContentsDownload, self)._headers(path)
         headers.add('Content-Disposition', 'attachment', filename=os.path.basename(path))
@@ -257,6 +275,13 @@ class QueryDownload(BaseDownload, Resource):
             
             data = current_app.formats[query.format](reader, query.schema, comments)
             path = '{path}.{ext}'.format(path=path, ext=query.format)
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'downloads',
+                'ea' : 'query_results',
+                'el' : query.id,
+            })
             
             return self._build_response(data, path, range_header)
 

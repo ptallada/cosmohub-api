@@ -36,6 +36,13 @@ class UserItem(Resource):
                     data.update(marshal(user.acls[group], fields.ACL))
                 user.groups.append(data)
             
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'user',
+                'ea' : 'details',
+                'el' : user.id,
+            })
+            
             return marshal(user, fields.User)
     
     @auth_required( Privilege(['user'], ['fresh']) | Privilege(['password_reset']) )
@@ -60,6 +67,13 @@ class UserItem(Resource):
             
             for key, value in attrs.iteritems():
                 setattr(user, key, value)
+                
+                g.session['track']({
+                    't' : 'event',
+                    'ec' : 'user',
+                    'ea' : 'change_' + key,
+                    'el' : user.id,
+                })
             
             session.flush()
             
@@ -131,6 +145,13 @@ class UserItem(Resource):
                 html = render_template('new_user.html', user=user, url=url),
             )
             
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'user',
+                'ea' : 'register',
+                'el' : user.id,
+            })
+        
             return marshal(user, fields.User), 201
 
     @auth_required(Privilege(['user'], ['fresh']))
@@ -143,6 +164,13 @@ class UserItem(Resource):
                 ).one()
                 
                 session.delete(user)
+                
+                g.session['track']({
+                    't' : 'event',
+                    'ec' : 'user',
+                    'ea' : 'delete',
+                    'el' : user.id,
+                })
         
         delete_user(g.session['user'].id)
 
@@ -173,6 +201,13 @@ class UserEmailConfirm(Resource):
                     body = render_template('account_activated.txt',  user=user),
                     html = render_template('account_activated.html', user=user),
                 )
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'user',
+                'ea' : 'email_confirm',
+                'el' : user.id,
+            })
             
             return ''
 
@@ -211,5 +246,12 @@ class UserPasswordReset(Resource):
                 body = render_template('password_reset.txt',  user=user, url=url),
                 html = render_template('password_reset.html', user=user, url=url),
             )
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'user',
+                'ea' : 'password_reset',
+                'el' : user.id,
+            })
 
 api_rest.add_resource(UserPasswordReset, '/user/password_reset')

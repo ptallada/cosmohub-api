@@ -1,5 +1,6 @@
 import logging
 
+from flask import g
 from flask_restful import Resource, reqparse
 
 from cosmohub.api import api_rest, mail
@@ -21,5 +22,10 @@ class Contact(Resource):
             recipients = ['cosmohub@pic.es'],
             body = 'FROM: ' + attrs['email'] + '\n\n' + attrs['message'],
         )
+        
+        g.session['track']({
+            't' : 'event',
+            'ec' : 'contact',
+        })
 
 api_rest.add_resource(Contact, '/contact')

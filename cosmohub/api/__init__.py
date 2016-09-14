@@ -3,9 +3,11 @@ patch_all()
 from psycogreen.gevent import patch_psycopg
 patch_psycopg()
 
+import gevent
 import logging
+import requests
 
-from flask import g, Flask, Blueprint, jsonify
+from flask import g, Flask, Blueprint, jsonify, request
 from flask_logconfig import LogConfig
 from flask_mail import Mail
 from flask_recaptcha import ReCaptcha
@@ -19,7 +21,9 @@ from pkg_resources import iter_entry_points # @UnresolvedImport
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext import declarative
 from sqlalchemy.orm.exc import NoResultFound
+from urllib import urlencode
 
+from . import release
 from .db import naming, schema, reflection
 
 log = logging.getLogger(__name__)
@@ -71,12 +75,48 @@ app.formats = {
 app.jwt = TimedJSONWebSignatureSerializer(app.config['SECRET_KEY'])
 
 @app.before_request
-def _clear_session():
+def _init_session():
     g.session = {
         'user' : None,
         'privilege' : None,
         'token' : None,
     }
+    
+    params = {
+        'v' : 1,
+        'tid' : app.config['GA_TRACKING_ID'],
+        'ds' : 'api',
+        'cid' : 'cosmohub.api {0}'.format(release.__version__),
+        'uip' : request.remote_addr,
+    }
+    
+    if request.headers.get('User-Agent', None):
+        params['ua'] = request.headers.get('User-Agent')
+    
+    if request.referrer:
+        params['dr'] = request.referrer
+    
+    def _send(payload):
+        log.debug('Reporting hits to GA: %s', payload)
+        requests.post(app.config['GA_URL'], data=payload)
+    
+    def _track(hit):
+        payload = params.copy()
+            
+        if g.session['user']:
+            payload['uid'] = g.session['user'].id
+            payload.update(hit)
+
+        body = []
+        for key, data in payload.iteritems():
+            if isinstance(data, basestring):
+                payload[key] = data.encode('utf-8')
+        
+        body.append(urlencode(payload))
+        
+        gevent.spawn(_send, "\n".join(body))
+    
+    g.session['track'] = _track
 
 # Add/refresh token to every authenticated request 
 from .security import Token, Privilege

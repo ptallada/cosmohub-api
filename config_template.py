@@ -4,7 +4,6 @@ import textwrap
 
 # Statement for enabling the development environment
 DEBUG = True
-GA_TRACKING_ID = ''
 
 # Define the application directory
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -107,3 +106,7 @@ OPBEAT = {
     'APP_ID': '',
     'SECRET_TOKEN': '',
 }
+
+# Google Analytics
+GA_URL = 'https://www.google-analytics.com/collect'
+GA_TRACKING_ID = ''
