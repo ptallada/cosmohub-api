@@ -36,7 +36,7 @@ def reflect_catalog_columns(metastore_uri, database):
                 "TABLE_NAME",
                 "COLUMN_NAME",
                 MIN(COALESCE(ps."LONG_LOW_VALUE", ps."DOUBLE_LOW_VALUE")) AS min,
-                MIN(COALESCE(ps."LONG_HIGH_VALUE", ps."DOUBLE_HIGH_VALUE")) AS max
+                MAX(COALESCE(ps."LONG_HIGH_VALUE", ps."DOUBLE_HIGH_VALUE")) AS max
             FROM "PART_COL_STATS" as ps
             GROUP BY "DB_NAME", "TABLE_NAME", "COLUMN_NAME"
         ) AS ps
