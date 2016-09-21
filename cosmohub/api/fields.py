@@ -69,8 +69,10 @@ UserToken = {
 }
 
 Group = {
-    'name'        : fields.String,
-    'description' : fields.String,
+    'id'           : fields.Integer,
+    'name'         : fields.String,
+    'description'  : fields.String,
+    'ts_created'   : fields.DateTime('iso8601'),
 }
 
 ACL = {
