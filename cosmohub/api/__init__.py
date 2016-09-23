@@ -24,7 +24,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from urllib import urlencode
 
 from . import release
-from .db import naming, schema, reflection
+from .database import naming, schema
+from .hadoop import hive
 
 log = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ db.Model = declarative.declarative_base(
 )
 
 # Load set of columns and comments for each catalog
-app.columns = reflection.reflect_catalog_columns(
+app.columns = hive.reflect_catalogs(
     metastore_uri=app.config['HIVE_METASTORE_URI'],
     database=app.config['HIVE_DATABASE'],
 )
