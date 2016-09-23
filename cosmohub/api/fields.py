@@ -23,22 +23,22 @@ CatalogCollection = {
 }
 
 Dataset = {
-    'id'              : fields.Integer,
-    'name'            : fields.String,
-    'version'         : fields.String,
-    'description'     : fields.String,
-    'rows'            : fields.Integer,
-    'recipe'          : fields.Raw,
-    'ts_defined'      : fields.DateTime('iso8601'),
+    'id'          : fields.Integer,
+    'name'        : fields.String,
+    'version'     : fields.String,
+    'description' : fields.String,
+    'rows'        : fields.Integer,
+    'recipe'      : fields.Raw,
+    'ts_defined'  : fields.DateTime('iso8601'),
 }
 
 File = {
-    'id'                : fields.Integer,
-    'name'              : fields.String,
-    'version'           : fields.String,
-    'description'       : fields.String,
-    'size'              : fields.Integer,
-    'ts_uploaded'       : fields.DateTime('iso8601'),
+    'id'          : fields.Integer,
+    'name'        : fields.String,
+    'version'     : fields.String,
+    'description' : fields.String,
+    'size'        : fields.Integer,
+    'ts_uploaded' : fields.DateTime('iso8601'),
 }
 
 Catalog = CatalogCollection.copy()
@@ -51,28 +51,28 @@ Catalog.update({
 })
 
 Query = {
-    'id'               : fields.Integer,
-    'sql'              : fields.String,
-    'format'           : fields.String,
-    'status'           : fields.String,
-    'job_id'           : fields.String,
-    'size'             : fields.Integer,
-    'ts_submitted'     : fields.DateTime('iso8601'),
-    'ts_started'       : fields.DateTime('iso8601'),
-    'ts_finished'      : fields.DateTime('iso8601'),
+    'id'           : fields.Integer,
+    'sql'          : fields.String,
+    'format'       : fields.String,
+    'status'       : fields.String,
+    'job_id'       : fields.String,
+    'size'         : fields.Integer,
+    'ts_submitted' : fields.DateTime('iso8601'),
+    'ts_started'   : fields.DateTime('iso8601'),
+    'ts_finished'  : fields.DateTime('iso8601'),
 }
 
 UserToken = {
-    'id'         : fields.Integer,
-    'name'       : fields.String,
-    'email'      : fields.String,
+    'id'    : fields.Integer,
+    'name'  : fields.String,
+    'email' : fields.String,
 }
 
 Group = {
-    'id'           : fields.Integer,
-    'name'         : fields.String,
-    'description'  : fields.String,
-    'ts_created'   : fields.DateTime('iso8601'),
+    'id'          : fields.Integer,
+    'name'        : fields.String,
+    'description' : fields.String,
+    'ts_created'  : fields.DateTime('iso8601'),
 }
 
 ACL = {
