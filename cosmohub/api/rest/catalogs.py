@@ -8,8 +8,8 @@ from cosmohub.api import db, api_rest
 
 from .downloads import DatasetReadmeDownload, FileReadmeDownload, FileContentsDownload
 from .. import fields
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 from ..security import auth_required, Privilege, Token
 
 class CatalogCollection(Resource):

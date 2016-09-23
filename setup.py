@@ -63,9 +63,9 @@ setup(
             'cosmohub_api_initialize_db = cosmohub.api.scripts.initialize_db:main',
         ],
         'cosmohub_format' : [
-            'csv.bz2 = cosmohub.api.io.format.csv_bz2:CsvBz2File',
-            'fits = cosmohub.api.io.format.fits:FitsFile',
-            'asdf = cosmohub.api.io.format.asdf:AsdfFile',
+            'csv.bz2 = cosmohub.api.formats.csv_bz2:CsvBz2File',
+            'fits = cosmohub.api.formats.fits:FitsFile',
+            'asdf = cosmohub.api.formats.asdf:AsdfFile',
         ]
     },
 )

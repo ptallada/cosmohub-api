@@ -14,11 +14,11 @@ from cosmohub.api import db, api_rest, mail
 
 from .downloads import QueryDownload
 from .. import fields
-from ..db import model
-from ..db.session import transactional_session, retry_on_serializable_error
-from ..io.hdfs import HDFSPathReader
+from ..database import model
+from ..database.session import transactional_session, retry_on_serializable_error
+from ..hadoop.hdfs import HDFSPathReader
 from ..security import auth_required, Privilege, Token
-from ..utils import webhcat
+from ..hadoop import webhcat
 
 log = logging.getLogger(__name__)
 

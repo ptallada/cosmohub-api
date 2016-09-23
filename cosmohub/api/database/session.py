@@ -47,9 +47,14 @@ def transactional_session(session, read_only=False):
         if read_only:
             session.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY DEFERRABLE")
         yield session
+    
     except:
         # Roll back if the nested block raised an error
         session.rollback()
         raise
+    
     else:
         session.commit()
+    
+    finally:
+        session.expunge_all()

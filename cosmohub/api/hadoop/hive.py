@@ -1,9 +1,55 @@
 import pandas as pd
+import pyparsing as pp
 import textwrap
 
 from sqlalchemy import create_engine
 
-def reflect_catalog_columns(metastore_uri, database):
+class HiveQLProgress(object):
+    PREFIX = pp.Suppress('INFO  :')
+    COUNTER = pp.Word(pp.nums).setParseAction(lambda s, l, t: int(t[0]))
+    HYPHEN = pp.Literal('-').setParseAction(lambda s, l, t: 0)
+    COUNT_OR_UNDEF = (HYPHEN | COUNTER)
+    
+    DONE = COUNT_OR_UNDEF
+    TOTAL = COUNT_OR_UNDEF
+    
+    ACTIVE = pp.Suppress('+') + COUNTER
+    FAILED = pp.Suppress('-') + COUNTER
+    
+    OPEN = pp.Optional(pp.Suppress('('))
+    CLOSE = pp.Optional(pp.Suppress(')'))
+    COMMA = pp.Optional(pp.Suppress(','))
+    
+    ACTIVE_AND_FAILED =OPEN + pp.Optional(ACTIVE, default=0) + COMMA + pp.Optional(FAILED, default=0) + CLOSE
+    
+    PROGRESS = pp.Group(DONE + ACTIVE_AND_FAILED + pp.Suppress('/') + TOTAL)
+    
+    STAGE = (pp.Suppress('Map') | pp.Suppress('Reducer')) + pp.Word(pp.nums).suppress() + pp.Suppress(':') + PROGRESS
+    
+    GRAMMAR = PREFIX + pp.OneOrMore(STAGE)
+    
+    @classmethod
+    def parse(cls, message):
+        done, running, failed, total = (0, 0, 0, 0)
+    
+        try:
+            stages = cls.GRAMMAR.parseString(message)
+    
+            for stage in stages:
+                done    += stage[0]
+                running += stage[1]
+                failed  += stage[2]
+                total   += stage[3]
+    
+        except pp.ParseException:
+            pass
+    
+        return (done, running, failed, total-done)
+
+def parse_progress(message):
+    return HiveQLProgress.parse(message)
+
+def reflect_catalogs(metastore_uri, database):
     engine = create_engine(metastore_uri)
 
     sql = textwrap.dedent("""\
@@ -36,7 +82,7 @@ def reflect_catalog_columns(metastore_uri, database):
                 "TABLE_NAME",
                 "COLUMN_NAME",
                 MIN(COALESCE(ps."LONG_LOW_VALUE", ps."DOUBLE_LOW_VALUE")) AS min,
-                MAX(COALESCE(ps."LONG_HIGH_VALUE", ps."DOUBLE_HIGH_VALUE")) AS max
+                MIN(COALESCE(ps."LONG_HIGH_VALUE", ps."DOUBLE_HIGH_VALUE")) AS max
             FROM "PART_COL_STATS" as ps
             GROUP BY "DB_NAME", "TABLE_NAME", "COLUMN_NAME"
         ) AS ps

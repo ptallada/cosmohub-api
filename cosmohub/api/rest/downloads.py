@@ -14,10 +14,10 @@ from werkzeug.http import parse_range_header
 
 from cosmohub.api import db, api_rest
 
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 from ..security import auth_required, Privilege
-from ..io.hdfs import HDFSPathReader
+from ..hadoop.hdfs import HDFSPathReader
 
 def create_content_range(range_header, length):
     if not range_header:

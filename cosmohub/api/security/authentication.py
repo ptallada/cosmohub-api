@@ -9,8 +9,8 @@ from werkzeug.datastructures import MultiDict
 from cosmohub.api import db
 
 from .privilege import Privilege
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 
 basic_auth = HTTPBasicAuth(realm='CosmoHub')
 token_auth = HTTPTokenAuth(realm='CosmoHub', scheme='Token')

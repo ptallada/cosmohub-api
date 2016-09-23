@@ -3,8 +3,8 @@ from flask_restful import Resource, marshal
 
 from cosmohub.api import db, api_rest, fields
 
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 
 class GroupCollection(Resource):
     def get(self):

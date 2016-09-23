@@ -13,7 +13,7 @@ from urllib import urlencode
 
 from .. import release
 from ..security.authentication import verify_token
-from ..utils import hive_progress
+from ..hadoop.hive import parse_progress
 
 log = logging.getLogger(__name__)
 
@@ -143,7 +143,7 @@ def _execute_query(ws, cursor, sql):
             _raise_if_cancelled(ws)
             
             if logs:
-                progress = hive_progress.parse(logs[-1])
+                progress = parse_progress(logs[-1])
                 ws.send(json.dumps({
                     'type' : 'progress',
                     'data' : {

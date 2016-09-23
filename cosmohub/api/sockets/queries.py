@@ -10,10 +10,10 @@ from urllib import urlencode
 from cosmohub.api import app, db, ws
 
 from .. import release
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 from ..security.authentication import verify_token
-from ..utils import webhcat
+from ..hadoop import webhcat
 
 log = logging.getLogger(__name__)
 

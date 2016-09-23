@@ -11,8 +11,8 @@ from sqlalchemy.sql import func
 from cosmohub.api import db, api_rest, mail, recaptcha
 
 from .. import fields
-from ..db import model
-from ..db.session import transactional_session, retry_on_serializable_error
+from ..database import model
+from ..database.session import transactional_session, retry_on_serializable_error
 from ..security import adler32, auth_required, Privilege, Token
 
 log = logging.getLogger(__name__)
