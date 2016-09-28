@@ -263,7 +263,7 @@ event.listen(
     "after_create",
     DDL(
         textwrap.dedent("""\
-            CREATE OR REPLACE FUNCTION acl__ts_resolved__before_update()
+            CREATE OR REPLACE FUNCTION acl__ts_resolved__before_insert_or_update()
             RETURNS TRIGGER AS $$
             BEGIN
                NEW.ts_resolved = now();
@@ -276,7 +276,14 @@ event.listen(
             ON acl
             FOR EACH ROW
             WHEN (OLD.is_granted != NEW.is_granted)
-            EXECUTE PROCEDURE acl__ts_resolved__before_update();
+            EXECUTE PROCEDURE acl__ts_resolved__before_insert_or_update();
+            
+            CREATE TRIGGER acl__ts_resolved__before_insert
+            BEFORE INSERT
+            ON acl
+            FOR EACH ROW
+            WHEN (NEW.is_granted IS NOT NULL)
+            EXECUTE PROCEDURE acl__ts_resolved__before_insert_or_update();
         """)
     )
 )
@@ -287,7 +294,8 @@ event.listen(
     DDL(
         textwrap.dedent("""\
             DROP TRIGGER IF EXISTS acl__ts_resolved__before_update ON acl;
-            DROP FUNCTION IF EXISTS acl__ts_resolved__before_update();
+            DROP TRIGGER IF EXISTS acl__ts_resolved__before_insert ON acl;
+            DROP FUNCTION IF EXISTS acl__ts_resolved__before_insert_or_update();
         """)
     )
 )
