@@ -5,6 +5,7 @@ patch_psycopg()
 
 import gevent
 import logging
+import os
 import requests
 
 from flask import g, Flask, Blueprint, jsonify, request
@@ -74,6 +75,13 @@ app.formats = {
 
 # Set up token signer
 app.jwt = TimedJSONWebSignatureSerializer(app.config['SECRET_KEY'])
+
+if os.environ.get('PYDEVD_HOST', None):
+    import pydevd
+    
+    @app.before_first_request
+    def _init_pydev():
+        pydevd.settrace(host=os.environ['PYDEVD_HOST'], suspend=False)
 
 @app.before_request
 def _init_session():
