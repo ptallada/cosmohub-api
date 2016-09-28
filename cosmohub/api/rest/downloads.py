@@ -128,7 +128,7 @@ class DatasetReadmeDownload(BaseDownload, Resource):
 
             if not dataset.catalog.is_public:
                 user = session.query(model.Dataset).join(
-                    'catalog', 'groups', 'allowed_users'
+                    'catalog', 'groups', 'users_allowed'
                 ).filter(
                     model.Dataset.id == id_,
                     model.User.id == g.session['user'].id,

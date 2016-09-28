@@ -22,7 +22,7 @@ class CatalogCollection(Resource):
             )
 
             restricted = session.query(model.Catalog).join(
-                'groups', 'allowed_users'
+                'groups', 'users_allowed'
             ).filter(
                 model.User.id == g.session['user'].id
             )
