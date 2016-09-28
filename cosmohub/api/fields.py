@@ -4,7 +4,7 @@ User = {
     'id'                 : fields.Integer,
     'name'               : fields.String,
     'email'              : fields.String,
-    'is_admin'           : fields.Boolean,
+    'is_superuser'       : fields.Boolean,
     'groups'             : fields.Raw,
     'ts_created'         : fields.DateTime('iso8601'),
     'ts_email_confirmed' : fields.DateTime('iso8601'),
@@ -78,5 +78,6 @@ Group = {
 ACL = {
     'ts_requested' : fields.DateTime('iso8601'),
     'is_granted'   : fields.Boolean,
+    'is_admin'     : fields.Boolean,
     'ts_resolved'  : fields.DateTime('iso8601'),
 }

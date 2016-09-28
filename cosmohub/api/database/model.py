@@ -60,19 +60,25 @@ class User(db.Model):
 
     # Columns
     _id                = Column('id',                 Integer,    nullable=False,                            comment='User unique identifier')
-    name               = Column('name',               String(64), nullable=False,                            comment='Full name (for metadata purposes)')
+    name               = Column('name',               String(64), nullable=False,                            comment='Full name (for communications)')
     email              = Column('email',              String(64), nullable=False,                            comment='E-Mail address')
-    is_admin           = Column('is_admin',           Boolean,    nullable=False, default=False,             comment='Whether this User has admin privileges')
+    is_superuser       = Column('is_superuser',       Boolean,    nullable=False, default='FALSE',           comment='Has superuser privileges?')
     password           = Column('password',           _Password,  nullable=False,                            comment='User credentials')
     ts_created         = Column('ts_created',         DateTime,   nullable=False, server_default=func.now(), comment='User creation timestamp')
     ts_email_confirmed = Column('ts_email_confirmed', DateTime,   nullable=True,                             comment='Email confirmation timestamp')
     ts_last_login      = Column('ts_last_login',      DateTime,   nullable=True,                             comment='Last login timestamp')
 
     # Relationships
-    granted_groups = relationship('Group',
+    groups_granted = relationship('Group',
         secondary=lambda: ACL.__table__, collection_class=set,
         primaryjoin='and_(User.id==ACL._user_id, ACL.is_granted==True)',
-        backref=backref('allowed_users', collection_class=set, passive_deletes=True)
+        backref=backref('allowed_users', collection_class=set, passive_deletes=True, viewonly=True)
+    )
+    
+    groups_administered = relationship('Group',
+        secondary=lambda: ACL.__table__, collection_class=set,
+        primaryjoin='and_(User.id==ACL._user_id, ACL.is_granted==True, ACL.is_admin==True)',
+        backref=backref('admin_users', collection_class=set, passive_deletes=True, viewonly=True)
     )
     
     @hybrid_property
@@ -106,12 +112,13 @@ class ACL(db.Model):
     _user_id     = Column('user_id',      Integer,  nullable=False,                            comment='User unique identifier')
     _group_id    = Column('group_id',     Integer,  nullable=False,                            comment='Group unique identifier')
     ts_requested = Column('ts_requested', DateTime, nullable=False, server_default=func.now(), comment='When access to this group was requested')
-    is_granted   = Column('is_granted',   Boolean,  nullable=True,                             comment='Whether this User has access to this Group')
+    is_admin     = Column('is_admin',     Boolean,  nullable=False, server_default='FALSE',    comment='Can grant or deny access to other users?')
+    is_granted   = Column('is_granted',   Boolean,  nullable=True,                             comment='Has access to the project data?')
     ts_resolved  = Column('ts_resolved',  DateTime, nullable=True,                             comment='When access request was granted or denied')
-
+    
     # Relationships
     group = relationship('Group',
-        backref=backref('acls', collection_class=set, passive_deletes=True)
+        backref=backref('acls', collection_class=attribute_mapped_collection('user'), passive_deletes=True)
     )
     user = relationship('User',
         backref=backref('acls', collection_class=attribute_mapped_collection('group'), passive_deletes=True)
@@ -142,7 +149,7 @@ event.listen(
             BEFORE UPDATE
             ON acl
             FOR EACH ROW
-            WHEN (NEW.is_granted IS NOT NULL)
+            WHEN (OLD.is_granted != NEW.is_granted)
             EXECUTE PROCEDURE acl__ts_resolved__before_update();
         """)
     )

@@ -173,7 +173,7 @@ class FileResource(Resource):
 
             if not is_public:
                 user = session.query(model.User).join(
-                    'granted_groups', 'catalogs', 'files'
+                    'groups_granted', 'catalogs', 'files'
                 ).filter(
                     model.File.id == id_,
                     model.User.id == g.session['user'].id,

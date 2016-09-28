@@ -54,7 +54,7 @@ class CatalogItem(Resource):
 
             if not catalog.is_public:
                 user = session.query(model.User).join(
-                    'granted_groups', 'catalogs'
+                    'groups_granted', 'catalogs'
                 ).filter(
                     model.Catalog.id == id_,
                     model.User.id == g.session['user'].id,
