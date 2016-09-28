@@ -25,7 +25,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from urllib import urlencode
 
 from . import release
-from .database import naming, schema
+from .database import naming
+from .database import schema as db_schema
 from .hadoop import hive
 
 log = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ recaptcha = ReCaptcha(app)
 opbeat = Opbeat(app)
 
 # Configure SQLAlchemy extension
-metadata = schema.MetaData()
+metadata = db_schema.MetaData()
 metadata.naming_convention = naming.naming_convention
 
 db = SQLAlchemy(app, metadata=metadata)
@@ -58,7 +59,7 @@ db.engine.pool._use_threadlocal = True
 
 db.Model = declarative.declarative_base(
     cls=FlaskModel, name='Model', metadata=metadata,
-    metaclass=schema.DeclarativeMeta
+    metaclass=db_schema.DeclarativeMeta
 )
 
 # Load set of columns and comments for each catalog

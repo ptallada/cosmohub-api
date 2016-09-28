@@ -58,7 +58,7 @@ class UserItem(Resource):
         with transactional_session(db.session) as session:
             user = session.query(model.User).filter_by(
                 id=g.session['user'].id
-            ).with_for_update(of=model.User).one()
+            ).with_for_update().one()
             
             privilege = Privilege(['user'], ['fresh'])
             privilege |= Privilege(['password_reset'], [adler32(user.password.hash)])
@@ -184,7 +184,7 @@ class UserEmailConfirm(Resource):
         with transactional_session(db.session) as session:
             user = session.query(model.User).filter_by(
                 id=g.session['user'].id
-            ).with_for_update(of=model.User).one()
+            ).with_for_update().one()
             
             privilege = Privilege(['email_confirm'], [adler32(user.email)])
             if not privilege.can(g.session['privilege']):
