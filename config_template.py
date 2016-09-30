@@ -85,9 +85,8 @@ MAIL_PASSWORD = None
 MAIL_DEFAULT_SENDER = 'CosmoHub <cosmohub@pic.es>'
 
 MAIL_SUBJECTS = {
-    'account_activated' : 'Hi {name}, welcome to CosmoHub!',
     'email_confirmation' : 'Confirm your email address',
-    'new_user' : 'Activate your CosmoHub account',
+    'new_user' : 'Hi {name}, welcome to CosmoHub!',
     'password_reset' : 'Reset your CosmoHub password',
     'query_ready' : 'Your catalog (#{id}) is ready!',
 }

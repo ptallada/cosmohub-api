@@ -194,14 +194,6 @@ class UserEmailConfirm(Resource):
             
             session.flush()
             
-            if not user.ts_last_login:
-                mail.send_message(
-                    subject = current_app.config['MAIL_SUBJECTS']['account_activated'].format(name=user.name),
-                    recipients = [user.email],
-                    body = render_template('account_activated.txt',  user=user),
-                    html = render_template('account_activated.html', user=user),
-                )
-            
             g.session['track']({
                 't' : 'event',
                 'ec' : 'user',
