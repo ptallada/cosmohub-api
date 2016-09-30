@@ -89,10 +89,10 @@ class UserItem(Resource):
                 url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
                 
                 mail.send_message(
-                    subject = current_app.config['MAIL_SUBJECTS']['email_confirmation'],
+                    subject = current_app.config['MAIL_SUBJECTS']['email_confirm'],
                     recipients = [user.email],
-                    body = render_template('email_confirmation.txt', user=user, url=url),
-                    html = render_template('email_confirmation.html', user=user, url=url),
+                    body = render_template('email_confirm.txt', user=user, url=url),
+                    html = render_template('email_confirm.html', user=user, url=url),
                 )
 
     def post(self):
@@ -139,10 +139,10 @@ class UserItem(Resource):
             url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
             
             mail.send_message(
-                subject = current_app.config['MAIL_SUBJECTS']['new_user'],
+                subject = current_app.config['MAIL_SUBJECTS']['user_register'],
                 recipients = [user.email],
-                body = render_template('new_user.txt', user=user, url=url),
-                html = render_template('new_user.html', user=user, url=url),
+                body = render_template('user_register.txt', user=user, url=url),
+                html = render_template('user_register.html', user=user, url=url),
             )
             
             g.session['track']({
