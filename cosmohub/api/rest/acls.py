@@ -1,4 +1,8 @@
-from flask import g
+from flask import (
+    current_app,
+    g,
+    render_template,
+)
 from flask_restful import (
     marshal,
     reqparse,
@@ -11,7 +15,11 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import and_
 
-from cosmohub.api import db, api_rest
+from cosmohub.api import (
+    api_rest,
+    db,
+    mail,
+)
 
 from .. import fields
 from ..database import model
@@ -87,8 +95,9 @@ class AclItem(Resource):
 
     def patch(self, id_):
         parser = reqparse.RequestParser()
-        parser.add_argument('groups_granted', action='append', default=[])
-        parser.add_argument('groups_revoked', action='append', default=[])
+        parser.add_argument('groups_granted', required=True, action='append')
+        parser.add_argument('groups_revoked', required=True, action='append')
+        parser.add_argument('notify', required=True, type=bool)
 
         attrs = parser.parse_args(strict=True)
         
@@ -137,6 +146,22 @@ class AclItem(Resource):
                 if group not in user.acls:
                     user.acls[group] = model.ACL(group=group, user=user)
                 user.acls[group].is_granted = False
+            
+            session.flush()
+            
+            if attrs['notify'] and session.dirty:
+                groups = [
+                    group
+                    for group in user.acls
+                    if user.acls[group].is_granted
+                ]
+                
+                mail.send_message(
+                    subject = current_app.config['MAIL_SUBJECTS']['acls_change'],
+                    recipients = [user.email],
+                    body = render_template('acls_change.txt', groups=groups),
+                    html = render_template('acls_change.html', groups=groups),
+                )
             
             #g.session['track']({
             #    't' : 'event',

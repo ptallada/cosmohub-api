@@ -85,6 +85,7 @@ MAIL_PASSWORD = None
 MAIL_DEFAULT_SENDER = 'CosmoHub <cosmohub@pic.es>'
 
 MAIL_SUBJECTS = {
+    'acls_change' : u'Group membership updated',
     'email_confirm' : u'Confirm your email address',
     'password_reset' : u'Reset your CosmoHub password',
     'query_ready' : u'Your catalog (#{id}) is ready!',

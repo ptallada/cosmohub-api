@@ -1,0 +1,14 @@
+<p>Hi {{ user.name }},</p>
+
+<p>Your group membership status has been updated.
+As of now, you can access the data of the following projects:</p>
+
+<ul>
+  {% for group in groups %}
+    <li>{{ group.name }}</li>
+  {% endfor %}
+</ul>
+
+<p>Best regards,</p>
+
+<p>The CosmoHub team.</p>
