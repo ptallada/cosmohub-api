@@ -244,8 +244,8 @@ class QueryCallback(Resource):
             mail.send_message(
                 subject = current_app.config['MAIL_SUBJECTS']['query_ready'].format(id=query.id),
                 recipients = [query.user.email],
-                body = render_template('query_ready.txt', **context),
-                html = render_template('query_ready.html', **context),
+                body = render_template('mail/query_ready.txt', **context),
+                html = render_template('mail/query_ready.html', **context),
             )
             
             g.session['track']({

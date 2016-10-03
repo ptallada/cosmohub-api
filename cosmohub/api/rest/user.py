@@ -91,8 +91,8 @@ class UserItem(Resource):
                 mail.send_message(
                     subject = current_app.config['MAIL_SUBJECTS']['email_confirm'],
                     recipients = [user.email],
-                    body = render_template('email_confirm.txt', user=user, url=url),
-                    html = render_template('email_confirm.html', user=user, url=url),
+                    body = render_template('mail/email_confirm.txt', user=user, url=url),
+                    html = render_template('mail/email_confirm.html', user=user, url=url),
                 )
 
     def post(self):
@@ -141,8 +141,8 @@ class UserItem(Resource):
             mail.send_message(
                 subject = current_app.config['MAIL_SUBJECTS']['user_register'],
                 recipients = [user.email],
-                body = render_template('user_register.txt', user=user, url=url),
-                html = render_template('user_register.html', user=user, url=url),
+                body = render_template('mail/user_register.txt', user=user, url=url),
+                html = render_template('mail/user_register.html', user=user, url=url),
             )
             
             g.session['track']({
@@ -235,8 +235,8 @@ class UserPasswordReset(Resource):
             mail.send_message(
                 subject = current_app.config['MAIL_SUBJECTS']['password_reset'],
                 recipients = [user.email],
-                body = render_template('password_reset.txt',  user=user, url=url),
-                html = render_template('password_reset.html', user=user, url=url),
+                body = render_template('mail/password_reset.txt',  user=user, url=url),
+                html = render_template('mail/password_reset.html', user=user, url=url),
             )
             
             g.session['track']({
