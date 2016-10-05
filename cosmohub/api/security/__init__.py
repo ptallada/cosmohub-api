@@ -10,7 +10,7 @@ from .authentication import (
     token_auth,
 )
 from .privilege import Privilege
-from .token import adler32, Token
+from .token import Token
 
 def adler32(data):
     return "%08x" % (zlib.adler32(data) & 0xFFFFFFFF)

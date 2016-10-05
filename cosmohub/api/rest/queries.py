@@ -1,23 +1,24 @@
+import humanize
 import io
 import logging
 import os
 
-from datetime import datetime
-from flask import g, current_app
+from datetime import datetime, timedelta
+from flask import g, current_app, render_template, render_template_string
 from flask_restful import Resource, marshal, reqparse
 from pyhdfs import HdfsClient
 from pyhive import hive
 from werkzeug import exceptions as http_exc 
 
-from cosmohub.api import db, api_rest
+from cosmohub.api import db, api_rest, mail
 
 from .downloads import QueryDownload
 from .. import fields
-from ..db import model
-from ..db.session import transactional_session, retry_on_serializable_error
-from ..io.hdfs import HDFSPathReader
+from ..database import model
+from ..database.session import transactional_session, retry_on_serializable_error
+from ..hadoop.hdfs import HDFSPathReader
 from ..security import auth_required, Privilege, Token
-from ..utils import webhcat
+from ..hadoop import webhcat
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +43,13 @@ class QueryCollection(Resource):
                     
                 url = api_rest.url_for(QueryDownload, id_=query['id'], auth_token=token.dump(), _external=True)
                 query['download_results'] = url
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'queries',
+                'ea' : 'list',
+                'ev' : len(data),
+            })
             
             return data
 
@@ -77,8 +85,15 @@ class QueryCollection(Resource):
                         query = sql,
                         path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id)),
                         format_ = format_,
-                        callback_url = api_rest.url_for(QueryCallback, id_=query.id, _external=True)
+                        callback_url = current_app.config['WEBHCAT_CALLBACK_URL'].format(id=query.id),
                     )
+                    
+                    g.session['track']({
+                        't' : 'event',
+                        'ec' : 'queries',
+                        'ea' : 'requested',
+                        'el' : query.format,
+                    })
                     
                     return marshal(query, fields.Query)
             
@@ -93,7 +108,7 @@ class QueryCollection(Resource):
         
         parser = reqparse.RequestParser()
         parser.add_argument('sql', required=True)
-        parser.add_argument('format', required=False)
+        parser.add_argument('format', required=True)
         
         attrs = parser.parse_args(strict=True)
         
@@ -143,7 +158,16 @@ def finish_query(query, status):
         path = os.path.join(client.get_home_directory(), path)
     
     reader = HDFSPathReader(client, path)
-    data = current_app.formats[query.format](reader, query.schema)
+    
+    context = {
+        'query' : query,
+        'duration' : timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds())),
+        'user' : query.user,
+    }
+    
+    comments = render_template_string(current_app.config['QUERY_COMMENTS'], **context)
+    
+    data = current_app.formats[query.format](reader, query.schema, comments)
     query.size = data.seek(0, io.SEEK_END)
 
 class QueryCancel(Resource):
@@ -164,7 +188,15 @@ class QueryCancel(Resource):
                 
                 status = hive_rest.cancel(query.job_id)
                 
-                return finish_query(query, status)
+                finish_query(query, status)
+                
+                g.session['track']({
+                    't' : 'event',
+                    'ec' : 'queries',
+                    'ea' : 'cancelled',
+                    'el' : query.format,
+                    'ev' : int((query.ts_finished - query.ts_started).total_seconds())
+                })
         
         cancel_query(id_)
 
@@ -178,20 +210,50 @@ class QueryCallback(Resource):
             database=current_app.config['HIVE_DATABASE']
         )
         
-        @retry_on_serializable_error
-        def check_query(id_):
-            with transactional_session(db.session) as session:
-                query = session.query(model.Query).filter_by(
-                    id=id_,
-                ).with_for_update().one()
+        with transactional_session(db.session) as session:
+            query = session.query(model.Query).filter_by(
+                id=id_,
+            ).join(
+                model.Query.user,
+            ).with_for_update().one()
+            
+            if model.Query.Status(query.status).is_final():
+                return
+            
+            status = hive_rest.status(query.job_id)
+            
+            finish_query(query, status)
+            
+            session.flush()
+            
+            token = Token(
+                query.user,
+                Privilege(['download'], ['query'], [query.id]),
+                expires_in=current_app.config['TOKEN_EXPIRES_IN']['download'],
+            )
                 
-                if model.Query.Status(query.status).is_final():
-                    return
-                
-                status = hive_rest.status(query.job_id)
-                
-                return finish_query(query, status)
+            url = api_rest.url_for(QueryDownload, id_=query.id, auth_token=token.dump(), _external=True)
+            
+            context = {
+                'query' : query,
+                'duration' : timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds())),
+                'humanize' : humanize,
+                'url' : url,
+            }
+            
+            mail.send_message(
+                subject = current_app.config['MAIL_SUBJECTS']['query_ready'].format(id=query.id),
+                recipients = [query.user.email],
+                body = render_template('mail/query_ready.txt', **context),
+                html = render_template('mail/query_ready.html', **context),
+            )
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'queries',
+                'ea' : 'completed',
+                'el' : query.format,
+                'ev' : int((query.ts_finished - query.ts_started).total_seconds())
+            })
 
-        check_query(id_)
-
-api_rest.add_resource(QueryCallback, '/queries/<int:id_>/callback')
+api_rest.add_resource(QueryCallback, '/queries/callback/<int:id_>')

@@ -4,7 +4,8 @@ import mimetypes
 import os
 import werkzeug.exceptions as http_exc
 
-from flask import g, current_app, request, Response
+from datetime import timedelta
+from flask import g, current_app, request, Response, render_template_string
 from flask_restful import Resource
 from pyhdfs import HdfsClient
 from sqlalchemy.orm import joinedload
@@ -13,10 +14,10 @@ from werkzeug.http import parse_range_header
 
 from cosmohub.api import db, api_rest
 
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 from ..security import auth_required, Privilege
-from ..io.hdfs import HDFSPathReader
+from ..hadoop.hdfs import HDFSPathReader
 
 def create_content_range(range_header, length):
     if not range_header:
@@ -127,7 +128,7 @@ class DatasetReadmeDownload(BaseDownload, Resource):
 
             if not dataset.catalog.is_public:
                 user = session.query(model.Dataset).join(
-                    'catalog', 'groups', 'users'
+                    'catalog', 'groups', 'users_allowed'
                 ).filter(
                     model.Dataset.id == id_,
                     model.User.id == g.session['user'].id,
@@ -142,6 +143,13 @@ class DatasetReadmeDownload(BaseDownload, Resource):
             range_header = request.headers.get('Range', None)
             path = self._get_path(dataset)
             reader = HDFSPathReader(self._create_client(), path)
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'downloads',
+                'ea' : 'dataset_readme',
+                'el' : dataset.id,
+            })
             
             return self._build_response(reader, path, range_header)
 
@@ -165,7 +173,7 @@ class FileResource(Resource):
 
             if not is_public:
                 user = session.query(model.User).join(
-                    'groups', 'catalogs', 'files'
+                    'groups_granted', 'catalogs', 'files'
                 ).filter(
                     model.File.id == id_,
                     model.User.id == g.session['user'].id,
@@ -181,9 +189,18 @@ class FileResource(Resource):
             path = self._get_path(file_)
             reader = HDFSPathReader(self._create_client(), path)
             
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'downloads',
+                'ea' : self._track_action,
+                'el' : file.id,
+            })
+            
             return self._build_response(reader, path, range_header)
 
 class FileReadmeDownload(BaseDownload, FileResource):
+    _track_action = 'file_readme'
+    
     @staticmethod
     def _get_path(item):
         return os.path.join(current_app.config['DOWNLOADS_BASE_DIR'], item.path_readme)
@@ -191,6 +208,8 @@ class FileReadmeDownload(BaseDownload, FileResource):
 api_rest.add_resource(FileReadmeDownload, '/downloads/files/<int:id_>/readme')
 
 class FileContentsDownload(BaseDownload, FileResource):
+    _track_action = 'file_contents'
+    
     def _headers(self, path):
         headers = super(FileContentsDownload, self)._headers(path)
         headers.add('Content-Disposition', 'attachment', filename=os.path.basename(path))
@@ -245,8 +264,24 @@ class QueryDownload(BaseDownload, Resource):
                 path = os.path.join(client.get_home_directory(), path)
                 
             reader = HDFSPathReader(client, path)
-            data = current_app.formats[query.format](reader, query.schema)
+            
+            context = {
+                'query' : query,
+                'duration' : timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds())),
+                'user' : user,
+            }
+            
+            comments = render_template_string(current_app.config['QUERY_COMMENTS'], **context)
+            
+            data = current_app.formats[query.format](reader, query.schema, comments)
             path = '{path}.{ext}'.format(path=path, ext=query.format)
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'downloads',
+                'ea' : 'query_results',
+                'el' : query.id,
+            })
             
             return self._build_response(data, path, range_header)
 

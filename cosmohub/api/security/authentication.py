@@ -1,15 +1,16 @@
 from flask import g, current_app, request
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
-from itsdangerous import BadData
+from itsdangerous import BadData, SignatureExpired
 from sqlalchemy.orm import undefer_group
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
+from werkzeug.datastructures import MultiDict
 
 from cosmohub.api import db
 
 from .privilege import Privilege
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 
 basic_auth = HTTPBasicAuth(realm='CosmoHub')
 token_auth = HTTPTokenAuth(realm='CosmoHub', scheme='Token')
@@ -20,6 +21,12 @@ def verify_password(username, password):
     # If it does not succeed, continue with username and password
     token = request.args.get('auth_token')
     if token:
+        # FIXME: THIS IS WRONG. request.args is immutable :(
+        # But we have to capture the token or it thinks is a form parameter too
+        # For the next version, auth MUST be a header, no excuses.
+        request.args = MultiDict(request.args)
+        del request.args['auth_token']
+        
         granted = verify_token(token)
         
         if granted:
@@ -37,12 +44,23 @@ def verify_password(username, password):
             ).one()
 
         except NoResultFound:
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'login',
+                'ea' : 'error',
+            })
             return False
 
         else:
             # CAUTION: This comparison may refresh the password and requires
             # a writable transaction
             if not user.password == password:
+                g.session['track']({
+                    't' : 'event',
+                    'ec' : 'login',
+                    'ea' : 'failed',
+                    'el' : user.id,
+                })
                 return False
             
             # Update last login timestamp
@@ -55,6 +73,13 @@ def verify_password(username, password):
             
             if user.ts_email_confirmed != None:
                 g.session['privilege'] = Privilege(['user'], ['fresh'])
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'login',
+                'ea' : 'successful',
+                'el' : g.session['user'].id,
+            })
             
             return True
 
@@ -71,7 +96,20 @@ def verify_token(token):
                 model.User.id==token['user']['id'],
             ).one()
         
+        except SignatureExpired:
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'token',
+                'ea' : 'expired',
+            })
+            return False
+        
         except BadData:
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'token',
+                'ea' : 'invalid',
+            })
             return False
         
         except NoResultFound:
@@ -83,5 +121,12 @@ def verify_token(token):
         g.session['token'] = token
         g.session['user'] = user
         g.session['privilege'] = Privilege(*token['privilege'])
+        
+        g.session['track']({
+            't' : 'event',
+            'ec' : 'token',
+            'ea' : 'successful',
+            'el' : g.session['user'].id,
+        })
         
         return True

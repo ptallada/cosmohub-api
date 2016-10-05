@@ -1,13 +1,8 @@
-import zlib
-
 from flask import current_app
 from flask_restful import marshal
 from itsdangerous import TimedJSONWebSignatureSerializer
 
 from .. import fields
-
-def adler32(data):
-    return "%08x" % (zlib.adler32(data) & 0xFFFFFFFF)
 
 class Token(object):
     _serializer_class = TimedJSONWebSignatureSerializer

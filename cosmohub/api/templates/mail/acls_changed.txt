@@ -1,0 +1,12 @@
+Hi {{ user.name }},
+
+Your group membership status has been updated.
+As of now, you can access the data of the following projects:
+
+{% for group in groups %}
+ - {{ group.name }}
+{% endfor %}
+
+Best regards,
+
+The CosmoHub team.

@@ -1,0 +1,18 @@
+Hi {{ query.user.name }},
+
+Your catalog request (#{{ query.id }}) has been produced as requested:
+
+ - query: {{ query.sql }}
+ - duration: {{ duration }} (h:mm:ss)
+ - size: {{ humanize.naturalsize(query.size, binary=True) }}
+ - format: {{ query.format }}
+
+It is available for download at:
+
+{{ url }}
+
+Please, remember to follow the citation guide if you use any of this data in
+your research.
+
+Thanks for using CosmoHub,
+The CosmoHub team.

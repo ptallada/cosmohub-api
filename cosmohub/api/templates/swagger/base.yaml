@@ -1,0 +1,50 @@
+swagger: '2.0'
+
+info:
+  version: {{version}}
+  title: CosmoHub
+  description: CosmoHub REST API
+  termsOfService: >
+    This API is intented just for INTERNAL USE. If you want to have access to CosmoHub using this API,
+    please contact us beforehand.
+  contact:
+    name: Pau Tallada Crespí
+    email: pau.tallada@gmail.com
+  license:
+    name: AGPL-3.0
+    url: https://opensource.org/licenses/AGPL-3.0
+
+host: api.cosmohub.pic.es
+
+consumes:
+  - application/json
+
+produces:
+  - application/json
+
+securityDefinitions:
+    basic:
+      type: basic
+      description: >
+        HTTP Basic Authentication as described in
+        [RFC 1945](http://tools.ietf.org/html/rfc1945#section-11) and
+        [RFC 2617](http://tools.ietf.org/html/rfc2617#section-2).
+    header_token:
+      type: apiKey
+      description: >
+        JWT payload sent as a "Authorization: Token" header.
+      name: Authorization
+      in: header
+    query_token:
+      type: apiKey
+      description: >
+        JWT payload sent as a "ticket" query parameter.
+      name: ticket
+      in: header
+
+security:
+  - basic: []
+
+tags:
+  - name: groups
+    description: Retrieve list of groups

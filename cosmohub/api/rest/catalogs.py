@@ -8,8 +8,8 @@ from cosmohub.api import db, api_rest
 
 from .downloads import DatasetReadmeDownload, FileReadmeDownload, FileContentsDownload
 from .. import fields
-from ..db import model
-from ..db.session import transactional_session
+from ..database import model
+from ..database.session import transactional_session
 from ..security import auth_required, Privilege, Token
 
 class CatalogCollection(Resource):
@@ -22,12 +22,19 @@ class CatalogCollection(Resource):
             )
 
             restricted = session.query(model.Catalog).join(
-                'groups', 'users'
+                'groups', 'users_allowed'
             ).filter(
                 model.User.id == g.session['user'].id
             )
 
             catalogs = public.union(restricted).all()
+
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'catalogs',
+                'ea' : 'list',
+                'ev' : len(catalogs),
+            })
 
             return marshal(catalogs, fields.CatalogCollection)
 
@@ -47,7 +54,7 @@ class CatalogItem(Resource):
 
             if not catalog.is_public:
                 user = session.query(model.User).join(
-                    'groups', 'catalogs'
+                    'groups_granted', 'catalogs'
                 ).filter(
                     model.Catalog.id == id_,
                     model.User.id == g.session['user'].id,
@@ -81,6 +88,13 @@ class CatalogItem(Resource):
                 file_['download_readme'] = url
                 url = api_rest.url_for(FileContentsDownload, id_=file_['id'], auth_token=token.dump(), _external=True)
                 file_['download_contents'] = url
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'catalogs',
+                'ea' : 'list',
+                'el' : catalog.id,
+            })
             
             return data
 

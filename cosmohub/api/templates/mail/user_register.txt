@@ -1,0 +1,13 @@
+Hi {{ user.name }},
+
+Welcome to CosmoHub!
+
+Please open the following link to validate your email address and activate your
+account:
+
+{{ url }}
+
+If you did not sign up for CosmoHub, please disregard this message.
+
+Cheers,
+The CosmoHub team.

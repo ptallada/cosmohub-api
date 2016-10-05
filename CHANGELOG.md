@@ -6,6 +6,27 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.0.0] - 2016-10-05
+### Added
+- Add `/contact` endpoint. (Pau Tallada)
+- Lock rows when sending mails. (Pau Tallada)
+- Add comments to CSV, FITS and ASDF headers. (Pau Tallada)
+- Integrate with OpBeat. (Pau Tallada)
+- Add request tracking for analytics. (Pau Tallada)
+- Add `acl` endpoint. (Pau Tallada)
+- Notify users on membership changes. (Pau Tallada)
+
+### Changed
+- Warn user when resultsets are limited. (Pau Tallada)
+- Refactor mail templates. (Pau Tallada)
+- Replace websockets implementation. (Pau Tallada)
+- Refactor data model. (Pau Tallada)
+- Do not send an email upon account activation. (Pau Tallada)
+
+### Fixed
+- Notify the user when a query has finished. (Pau Tallada)
+
+
 ## [1.1.0] - 2016-09-05
 ### Added
 - Return total number of rows of a catalog. (Pau Tallada)
