@@ -457,7 +457,23 @@ class Catalog(db.Model):
             Text,
             nullable=False,
             comment='Long description'
-        )
+        ),
+    )
+    citation = deferred(
+        Column(
+            'citation',
+            Text,
+            nullable=False,
+            comment='How to cite this catalog in a paper'
+        ),
+    )
+    distribution = deferred(
+        Column(
+            'distribution',
+            Text,
+            nullable=False,
+            comment='Distribution rights and restrictions'
+        ),
     )
     relation = Column(
         'relation',

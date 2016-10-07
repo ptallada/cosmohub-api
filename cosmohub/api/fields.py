@@ -43,11 +43,13 @@ File = {
 
 Catalog = CatalogCollection.copy()
 Catalog.update({
-    'summary'  : fields.String,
-    'relation' : fields.String,
-    'rows'     : fields.Integer,
-    'datasets' : fields.List(fields.Nested(Dataset)),
-    'files'    : fields.List(fields.Nested(File)),
+    'summary'      : fields.String,
+    'citation'     : fields.String,
+    'distribution' : fields.String,
+    'relation'     : fields.String,
+    'rows'         : fields.Integer,
+    'datasets'     : fields.List(fields.Nested(Dataset)),
+    'files'        : fields.List(fields.Nested(File)),
 })
 
 Query = {
