@@ -1,5 +1,6 @@
 from flask import g
 from flask_restful import Resource, marshal
+from sqlalchemy.orm import undefer_group
 
 from cosmohub.api import db, api_rest, fields
 
@@ -9,7 +10,11 @@ from ..database.session import transactional_session
 class GroupCollection(Resource):
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
-            groups = session.query(model.Group).all()
+            groups = session.query(
+                model.Group
+            ).options(
+                undefer_group('text'),
+            ).all()
             
             g.session['track']({
                 't' : 'event',

@@ -12,6 +12,7 @@ from sqlalchemy import literal
 from sqlalchemy.orm import (
     aliased,
     contains_eager,
+    undefer_group,
 )
 from sqlalchemy.sql import and_
 
@@ -67,6 +68,8 @@ class AclCollection(Resource):
                 model.Group.users_admins, # @UndefinedVariable
             ).filter(
                 model.User.id == g.session['user'].id
+            ).options(
+                undefer_group('text')
             ).all()
             
             for user in users:
