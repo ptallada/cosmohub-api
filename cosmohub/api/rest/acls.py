@@ -12,6 +12,7 @@ from sqlalchemy import literal
 from sqlalchemy.orm import (
     aliased,
     contains_eager,
+    undefer_group,
 )
 from sqlalchemy.sql import and_
 
@@ -67,6 +68,8 @@ class AclCollection(Resource):
                 model.Group.users_admins, # @UndefinedVariable
             ).filter(
                 model.User.id == g.session['user'].id
+            ).options(
+                undefer_group('text')
             ).all()
             
             for user in users:
@@ -78,12 +81,12 @@ class AclCollection(Resource):
                         data.update(marshal(user.acls[group], fields.ACL))
                     user.groups.append(data)
             
-            #g.session['track']({
-            #    't' : 'event',
-            #    'ec' : 'users',
-            #    'ea' : 'list',
-            #    'ev' : len(users),
-            #})
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'acls',
+                'ea' : 'list',
+                'ev' : len(users),
+            })
             
             return marshal(users, fields.User)
 
@@ -163,13 +166,11 @@ class AclItem(Resource):
                     html = render_template('mail/acls_change.html', groups=groups),
                 )
             
-            #g.session['track']({
-            #    't' : 'event',
-            #    'ec' : 'catalogs',
-            #    'ea' : 'list',
-            #    'el' : catalog.id,
-            #})
-            
-            #return data
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'acls',
+                'ea' : 'edit',
+                'ev' : user.id,
+            })
 
 api_rest.add_resource(AclItem, '/acls/<int:id_>')

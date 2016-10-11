@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.1.0] - 2016-10-11
+### Added
+- Add `citation` and `distribution` fields. (Pau Tallada)
+- Add tracking for `/acl` endpoint. (Pau Tallada)
+
+### Fixed
+- Handle deferred columns. (Pau Tallada)
+
+
 ## [2.0.0] - 2016-10-05
 ### Added
 - Add `/contact` endpoint. (Pau Tallada)

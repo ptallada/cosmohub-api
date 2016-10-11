@@ -2,7 +2,10 @@ import werkzeug.exceptions as http_exc
 
 from flask import g, current_app
 from flask_restful import Resource, marshal
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import (
+    joinedload,
+    undefer_group,
+)
 
 from cosmohub.api import db, api_rest
 
@@ -49,7 +52,8 @@ class CatalogItem(Resource):
                 id = id_
             ).options(
                 joinedload('datasets'),
-                joinedload('files')
+                joinedload('files'),
+                undefer_group('text'),
             ).one()
 
             if not catalog.is_public:

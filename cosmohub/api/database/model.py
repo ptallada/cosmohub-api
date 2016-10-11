@@ -93,7 +93,8 @@ class User(db.Model):
             _Password,
             nullable=False,
             comment='User credentials'
-        )
+        ),
+        group = 'password',
     )
     ts_created = Column(
         'ts_created',
@@ -331,7 +332,8 @@ class Group(db.Model):
             Text,
             nullable=False,
             comment='Short description',
-        )
+        ),
+       group = 'text',
     )
     ts_created = Column(
         'ts_created',
@@ -457,7 +459,26 @@ class Catalog(db.Model):
             Text,
             nullable=False,
             comment='Long description'
-        )
+        ),
+        group = 'text',
+    )
+    citation = deferred(
+        Column(
+            'citation',
+            Text,
+            nullable=False,
+            comment='How to cite this catalog in a paper'
+        ),
+        group = 'text',
+    )
+    distribution = deferred(
+        Column(
+            'distribution',
+            Text,
+            nullable=False,
+            comment='Distribution rights and restrictions'
+        ),
+        group = 'text',
     )
     relation = Column(
         'relation',
@@ -722,6 +743,7 @@ class Query(db.Model):
             nullable=True,
             comment='Mapping of columns and types present in this Query',
         ),
+        group = 'json',
     )
     size = Column(
         'size',

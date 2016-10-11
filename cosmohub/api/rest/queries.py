@@ -8,6 +8,7 @@ from flask import g, current_app, render_template, render_template_string
 from flask_restful import Resource, marshal, reqparse
 from pyhdfs import HdfsClient
 from pyhive import hive
+from sqlalchemy.orm import undefer_group
 from werkzeug import exceptions as http_exc 
 
 from cosmohub.api import db, api_rest, mail
@@ -184,6 +185,8 @@ class QueryCancel(Resource):
             with transactional_session(db.session) as session:
                 query = session.query(model.Query).filter_by(
                     id=id_,
+                ).options(
+                    undefer_group('text'),
                 ).one()
                 
                 status = hive_rest.cancel(query.job_id)
@@ -215,6 +218,8 @@ class QueryCallback(Resource):
                 id=id_,
             ).join(
                 model.Query.user,
+            ).options(
+                undefer_group('text'),
             ).with_for_update().one()
             
             if model.Query.Status(query.status).is_final():
