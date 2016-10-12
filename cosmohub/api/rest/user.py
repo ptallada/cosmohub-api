@@ -24,19 +24,19 @@ class UserItem(Resource):
     @auth_required(Privilege(['user']))
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
-            user = session.query(
-                model.User
-            ).options(
-                joinedload('acls')
-            ).filter_by(
-                id=g.session['user'].id
-            ).one()
-            
             groups = session.query(
                 model.Group
             ).options(
                 undefer_group('text'),
             ).all()
+            
+            user = session.query(
+                model.User
+            ).options(
+                joinedload('acls'),
+            ).filter_by(
+                id=g.session['user'].id
+            ).one()
             
             user.groups = []
             for group in groups:
