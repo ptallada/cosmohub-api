@@ -58,7 +58,6 @@ class Hive(object):
         
         data = {
             'execute' : script,
-            'statusdir' : 'status',
         }
         if callback_url:
             data.update({
