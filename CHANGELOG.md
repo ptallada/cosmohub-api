@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Add `is_private` column to `Group`. (Pau Tallada)
+
 ### Fixed
 - Empty lists are not enough for required parameters. (Pau Tallada)
 - Do not send `statusdir` parameter to  WebHCat. (Pau Tallada)
