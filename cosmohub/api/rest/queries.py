@@ -2,6 +2,7 @@ import humanize
 import io
 import logging
 import os
+import urlparse
 
 from datetime import datetime, timedelta
 from flask import g, current_app, render_template, render_template_string
@@ -82,11 +83,18 @@ class QueryCollection(Resource):
                     except KeyError:
                         raise http_exc.BadRequest("Unsupported format requested.")
                     
+                    url = urlparse.urlparse(
+                        api_rest.url_for(QueryDone, id_=query.id, _external=True)
+                    )._replace(
+                        scheme='http',
+                        netloc=current_app.config['WEBHCAT_CALLBACK_NETLOC']
+                    ).geturl()
+                    
                     query.job_id = hive_rest.submit(
                         query = sql,
                         path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id)),
                         format_ = format_,
-                        callback_url = current_app.config['WEBHCAT_CALLBACK_URL'].format(id=query.id),
+                        callback_url = url,
                     )
                     
                     g.session['track']({
@@ -205,7 +213,7 @@ class QueryCancel(Resource):
 
 api_rest.add_resource(QueryCancel, '/queries/<int:id_>/cancel')
 
-class QueryCallback(Resource):
+class QueryDone(Resource):
     def get(self, id_):
         hive_rest=webhcat.Hive(
             url=current_app.config['WEBHCAT_BASE_URL'],
@@ -261,4 +269,4 @@ class QueryCallback(Resource):
                 'ev' : int((query.ts_finished - query.ts_started).total_seconds())
             })
 
-api_rest.add_resource(QueryCallback, '/queries/callback/<int:id_>')
+api_rest.add_resource(QueryDone, '/queries/<int:id_>/done')

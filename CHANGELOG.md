@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Add `is_private` column to `Group`. (Pau Tallada)
 
+### Changed
+- Rename and move `QueryCallback` endpoint. (Pau Tallada)
+
 ### Fixed
 - Empty lists are not enough for required parameters. (Pau Tallada)
 - Do not send `statusdir` parameter to  WebHCat. (Pau Tallada)
