@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Fixed
+- Empty lists are not enough for required parameters. (Pau Tallada)
+- Do not send `statusdir` parameter to  WebHCat. (Pau Tallada)
+- Reorder queries to handle deferred columns. (Pau Tallada)
 
 
 ## [2.1.0] - 2016-10-11

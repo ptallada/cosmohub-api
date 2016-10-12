@@ -98,8 +98,8 @@ class AclItem(Resource):
 
     def patch(self, id_):
         parser = reqparse.RequestParser()
-        parser.add_argument('groups_granted', required=True, action='append')
-        parser.add_argument('groups_revoked', required=True, action='append')
+        parser.add_argument('groups_granted', action='append', default=[])
+        parser.add_argument('groups_revoked', action='append', default=[])
         parser.add_argument('notify', required=True, type=bool)
 
         attrs = parser.parse_args(strict=True)
