@@ -31,8 +31,7 @@ from ..security import (
 )
 
 class AclCollection(Resource):
-    #decorators = [auth_required(Privilege(['user']) & Privilege(['admin']))]
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user/admin'))]
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
@@ -94,7 +93,7 @@ api_rest.add_resource(AclCollection, '/acls')
 
 
 class AclItem(Resource):
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user/admin'))]
 
     def patch(self, id_):
         parser = reqparse.RequestParser()

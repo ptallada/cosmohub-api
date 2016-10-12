@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add `is_private` column to `Group`. (Pau Tallada)
 
 ### Changed
+- Simplify `Privilege` system. (Pau Tallada)
 - Rename and move `QueryCallback` endpoint. (Pau Tallada)
 
 ### Fixed

@@ -3,25 +3,47 @@ import urllib
 import urlparse
 import werkzeug.exceptions as http_exc
 
-from flask import g, current_app, render_template, request
-from flask_restful import Resource, reqparse, marshal
+from flask import (
+    current_app,
+    g,
+    render_template,
+    request,
+)
+from flask_restful import (
+    marshal,
+    reqparse,
+    Resource,
+)
 from sqlalchemy.orm import (
     joinedload,
     undefer_group,
 )
 from sqlalchemy.sql import func
 
-from cosmohub.api import db, api_rest, mail, recaptcha
+from cosmohub.api import (
+    api_rest,
+    db,
+    mail,
+    recaptcha,
+)
 
 from .. import fields
 from ..database import model
-from ..database.session import transactional_session, retry_on_serializable_error
-from ..security import adler32, auth_required, Privilege, Token
+from ..database.session import (
+    retry_on_serializable_error,
+    transactional_session,
+)
+from ..security import (
+    adler32,
+    auth_required,
+    Privilege,
+    Token,
+)
 
 log = logging.getLogger(__name__)
 
 class UserItem(Resource):
-    @auth_required(Privilege(['user']))
+    @auth_required(Privilege('/user'))
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
             groups = session.query(
@@ -54,7 +76,7 @@ class UserItem(Resource):
             
             return marshal(user, fields.User)
     
-    @auth_required( Privilege(['user'], ['fresh']) | Privilege(['password_reset']) )
+    @auth_required( Privilege('/user') | Privilege('/password_reset') )
     def patch(self):
         parser = reqparse.RequestParser()
         parser.add_argument('name', store_missing=False)
@@ -65,12 +87,14 @@ class UserItem(Resource):
         attrs = parser.parse_args(strict=True)
 
         with transactional_session(db.session) as session:
-            user = session.query(model.User).filter_by(
+            user = session.query(
+                model.User
+            ).filter_by(
                 id=g.session['user'].id
             ).with_for_update().one()
             
-            privilege = Privilege(['user'], ['fresh'])
-            privilege |= Privilege(['password_reset'], [adler32(user.password.hash)])
+            privilege = Privilege('/user')
+            privilege |= Privilege('/password_reset/{0}'.format(adler32(user.password.hash)))
             if not privilege.can(g.session['privilege']):
                 raise http_exc.Unauthorized
             
@@ -91,7 +115,7 @@ class UserItem(Resource):
                 
                 token = Token(
                     user, 
-                    Privilege(['email_confirm'], [adler32(user.email)]), 
+                    Privilege('/email_confirm/{0}'.format(adler32(user.email))), 
                     expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
                 )
                 url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['redirect_to'])
@@ -141,7 +165,7 @@ class UserItem(Resource):
             
             token = Token(
                 user, 
-                Privilege(['email_confirm'], [adler32(user.email)]), 
+                Privilege('/email_confirm/{0}'.format(adler32(user.email))), 
                 expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
             )
             
@@ -163,7 +187,7 @@ class UserItem(Resource):
         
             return marshal(user, fields.User), 201
 
-    @auth_required(Privilege(['user'], ['fresh']))
+    @auth_required(Privilege('/user'))
     def delete(self):
         @retry_on_serializable_error
         def delete_user(user_id):
@@ -188,14 +212,14 @@ class UserItem(Resource):
 api_rest.add_resource(UserItem, '/user')
 
 class UserEmailConfirm(Resource):
-    @auth_required(Privilege(['email_confirm']))
+    @auth_required(Privilege('/email_confirm'))
     def get(self):
         with transactional_session(db.session) as session:
             user = session.query(model.User).filter_by(
                 id=g.session['user'].id
             ).with_for_update().one()
             
-            privilege = Privilege(['email_confirm'], [adler32(user.email)])
+            privilege = Privilege('/email_confirm/{0}'.format(adler32(user.email)))
             if not privilege.can(g.session['privilege']):
                 raise http_exc.Forbidden
             
@@ -235,7 +259,7 @@ class UserPasswordReset(Resource):
             
             token = Token(
                 user, 
-                Privilege(['password_reset'], [adler32(user.password.hash)]), 
+                Privilege('/password_reset/{0}'.format(adler32(user.password.hash))), 
                 expires_in=current_app.config['TOKEN_EXPIRES_IN']['password_reset'],
             )
             

@@ -25,7 +25,7 @@ from ..hadoop import webhcat
 log = logging.getLogger(__name__)
 
 class QueryCollection(Resource):
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user'))]
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
@@ -39,7 +39,7 @@ class QueryCollection(Resource):
             for query in data:
                 token = Token(
                     g.session['user'],
-                    Privilege(['download'], ['query'], [query['id']]),
+                    Privilege('/download/query/{0}'.format(query['id'])),
                     expires_in=current_app.config['TOKEN_EXPIRES_IN']['download'],
                 )
                     
@@ -180,7 +180,7 @@ def finish_query(query, status):
     query.size = data.seek(0, io.SEEK_END)
 
 class QueryCancel(Resource):
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user'))]
 
     def post(self, id_):
         hive_rest=webhcat.Hive(
@@ -241,7 +241,7 @@ class QueryDone(Resource):
             
             token = Token(
                 query.user,
-                Privilege(['download'], ['query'], [query.id]),
+                Privilege('/download/query/{0}'.format(query.id)),
                 expires_in=current_app.config['TOKEN_EXPIRES_IN']['download'],
             )
                 

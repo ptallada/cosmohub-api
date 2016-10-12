@@ -1,7 +1,7 @@
 from flask import g, current_app, request
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from itsdangerous import BadData, SignatureExpired
-from sqlalchemy.orm import undefer_group
+from sqlalchemy.orm import undefer_group, joinedload
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 from werkzeug.datastructures import MultiDict
@@ -41,6 +41,8 @@ def verify_password(username, password):
                 undefer_group('password'),
             ).filter(
                 model.User.email==username,
+            ).options(
+                joinedload('groups_administered'),
             ).one()
 
         except NoResultFound:
@@ -67,12 +69,15 @@ def verify_password(username, password):
             user.ts_last_login = func.now()
             
             session.flush()
-            session.expunge(user)
+            session.expunge_all()
             
             g.session['user'] = user
             
             if user.ts_email_confirmed != None:
-                g.session['privilege'] = Privilege(['user'], ['fresh'])
+                if user.groups_administered:
+                    g.session['privilege'] = Privilege('/user/admin')
+                else:
+                    g.session['privilege'] = Privilege('/user')
             
             g.session['track']({
                 't' : 'event',
@@ -120,7 +125,7 @@ def verify_token(token):
         
         g.session['token'] = token
         g.session['user'] = user
-        g.session['privilege'] = Privilege(*token['privilege'])
+        g.session['privilege'] = Privilege(token['privilege'])
         
         g.session['track']({
             't' : 'event',

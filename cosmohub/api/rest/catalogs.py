@@ -16,7 +16,7 @@ from ..database.session import transactional_session
 from ..security import auth_required, Privilege, Token
 
 class CatalogCollection(Resource):
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user'))]
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
@@ -44,7 +44,7 @@ class CatalogCollection(Resource):
 api_rest.add_resource(CatalogCollection, '/catalogs')
 
 class CatalogItem(Resource):
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user'))]
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
@@ -74,7 +74,7 @@ class CatalogItem(Resource):
             for dataset in data['datasets']:
                 token = Token(
                     g.session['user'],
-                    Privilege(['download'], ['dataset'], [dataset['id']]),
+                    Privilege('/download/dataset/{0}'.format(dataset['id'])),
                     expires_in=current_app.config['TOKEN_EXPIRES_IN']['download'],
                 )
                     
@@ -84,7 +84,7 @@ class CatalogItem(Resource):
             for file_ in data['files']:
                 token = Token(
                     g.session['user'],
-                    Privilege(['download'], ['file'], [file_['id']]),
+                    Privilege('/download/file/{0}'.format(file_['id'])),
                     expires_in=current_app.config['TOKEN_EXPIRES_IN']['download'],
                 )
                 
