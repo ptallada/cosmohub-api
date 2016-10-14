@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Added
 - Add `is_private` column to `Group`. (Pau Tallada)
+- Notify admins when users request membership. (Pau Tallada)
+- Notify users when their memberships have changed. (Pau Tallada)
 
 ### Changed
 - Simplify `Privilege` system. (Pau Tallada)

@@ -1,0 +1,16 @@
+Hi,
+
+The user '{{ user.name }}' with email address '{{ user.name }}' has requested
+access to one or more projects which you administer:
+
+{% for group in groups %}
+ - {{ group.name }}
+{% endfor %}
+
+Please proceed to the following link to grant or deny this request:
+
+{{url}}
+
+Best regards,
+
+The CosmoHub team.

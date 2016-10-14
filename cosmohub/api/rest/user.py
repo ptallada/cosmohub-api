@@ -133,9 +133,10 @@ class UserItem(Resource):
         parser.add_argument('name', required=True)
         parser.add_argument('email', required=True)
         parser.add_argument('password', required=True)
-        parser.add_argument('requested_groups', required=True, action='append')
+        parser.add_argument('requested_groups', default=[], action='append')
         parser.add_argument('recaptcha', required=True)
-        parser.add_argument('redirect_to', required=True)
+        parser.add_argument('email_confirm_route', required=True)
+        parser.add_argument('acl_update_route', required=True)
 
         attrs = parser.parse_args(strict=True)
 
@@ -143,14 +144,21 @@ class UserItem(Resource):
             raise http_exc.Unauthorized('Captcha invalid')
         del attrs['recaptcha']
         
-        url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['redirect_to'])
-        del attrs['redirect_to']
+        email_confirm_url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['email_confirm_route'])
+        del attrs['email_confirm_route']
+        
+        acl_update_url = urlparse.urljoin(request.environ['HTTP_REFERER'], attrs['acl_update_route'])
+        del attrs['acl_update_route']
         
         with transactional_session(db.session) as session:
             requested_groups = attrs.pop('requested_groups')
             
-            groups = session.query(model.Group).filter(
+            groups = session.query(
+                model.Group
+            ).filter(
                 model.Group.name.in_(requested_groups),
+            ).options(
+                joinedload('users_admins'),
             ).with_for_update().all()
 
             if len(groups) != len(requested_groups):
@@ -169,13 +177,43 @@ class UserItem(Resource):
                 expires_in=current_app.config['TOKEN_EXPIRES_IN']['email_confirm'],
             )
             
-            url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
+            email_confirm_url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
             
             mail.send_message(
                 subject = current_app.config['MAIL_SUBJECTS']['user_registered'],
                 recipients = [user.email],
-                body = render_template('mail/user_registered.txt', user=user, url=url),
-                html = render_template('mail/user_registered.html', user=user, url=url),
+                body = render_template(
+                    'mail/user_registered.txt',
+                    user=user,
+                    url=email_confirm_url
+                ),
+                html = render_template(
+                    'mail/user_registered.html',
+                    user=user,
+                    url=email_confirm_url
+                ),
+            )
+            
+            recipients = set()
+            for group in groups:
+                for user in group.users_admins:
+                    recipients.add(user.email)
+            
+            mail.send_message(
+                subject = current_app.config['MAIL_SUBJECTS']['acl_request'],
+                recipients = recipients,
+                body = render_template(
+                    'mail/acl_request.txt',
+                    user=user,
+                    groups=groups,
+                    url=acl_update_url,
+                ),
+                html = render_template(
+                    'mail/acl_request.html',
+                    user=user,
+                    groups=groups,
+                    url=acl_update_url,
+                ),
             )
             
             g.session['track']({
@@ -184,7 +222,7 @@ class UserItem(Resource):
                 'ea' : 'register',
                 'el' : user.id,
             })
-        
+            
             return marshal(user, fields.User), 201
 
     @auth_required(Privilege('/user'))
