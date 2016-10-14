@@ -159,10 +159,10 @@ class AclItem(Resource):
                 ]
                 
                 mail.send_message(
-                    subject = current_app.config['MAIL_SUBJECTS']['acls_change'],
+                    subject = current_app.config['MAIL_SUBJECTS']['acls_updated'],
                     recipients = [user.email],
-                    body = render_template('mail/acls_change.txt', groups=groups),
-                    html = render_template('mail/acls_change.html', groups=groups),
+                    body = render_template('mail/acls_updated.txt', groups=groups),
+                    html = render_template('mail/acls_updated.html', groups=groups),
                 )
             
             g.session['track']({

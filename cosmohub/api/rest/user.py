@@ -172,10 +172,10 @@ class UserItem(Resource):
             url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
             
             mail.send_message(
-                subject = current_app.config['MAIL_SUBJECTS']['user_register'],
+                subject = current_app.config['MAIL_SUBJECTS']['user_registered'],
                 recipients = [user.email],
-                body = render_template('mail/user_register.txt', user=user, url=url),
-                html = render_template('mail/user_register.html', user=user, url=url),
+                body = render_template('mail/user_registered.txt', user=user, url=url),
+                html = render_template('mail/user_registered.html', user=user, url=url),
             )
             
             g.session['track']({
