@@ -112,7 +112,7 @@ class BaseDownload(object):
         return response
 
 class DatasetReadmeDownload(BaseDownload, Resource):
-    decorators = [auth_required(Privilege(['user']) | Privilege(['download'], ['dataset']))]
+    decorators = [auth_required(Privilege('/user') | Privilege('/download/dataset'))]
 
     @staticmethod
     def _get_path(item):
@@ -135,7 +135,7 @@ class DatasetReadmeDownload(BaseDownload, Resource):
                 ).first()
 
                 if not user:
-                    priv = Privilege(['download'], ['dataset'], [dataset.id])
+                    priv = Privilege('/download/dataset/{0}'.format(dataset['id']))
                     
                     if not priv.can(g.session['privilege']):
                         raise http_exc.Forbidden
@@ -156,7 +156,7 @@ class DatasetReadmeDownload(BaseDownload, Resource):
 api_rest.add_resource(DatasetReadmeDownload, '/downloads/datasets/<int:id_>/readme')
 
 class FileResource(Resource):
-    decorators = [auth_required(Privilege(['user']) | Privilege(['download'], ['file']))]
+    decorators = [auth_required(Privilege('/user') | Privilege('/download/file'))]
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
@@ -180,7 +180,7 @@ class FileResource(Resource):
                 ).first()
 
                 if not user:
-                    priv = Privilege(['download'], ['file'], [file_.id])
+                    priv = Privilege('/download/file/{0}'.format(file_['id']))
                     
                     if not priv.can(g.session['privilege']):
                         raise http_exc.Forbidden
@@ -222,7 +222,7 @@ class FileContentsDownload(BaseDownload, FileResource):
 api_rest.add_resource(FileContentsDownload, '/downloads/files/<int:id_>/contents')
 
 class QueryDownload(BaseDownload, Resource):
-    decorators = [auth_required(Privilege(['user']) | Privilege(['download'], ['query']))]
+    decorators = [auth_required(Privilege('/user') | Privilege('/download/query'))]
 
     def _headers(self, path):
         headers = super(QueryDownload, self)._headers(path)
@@ -253,7 +253,7 @@ class QueryDownload(BaseDownload, Resource):
             if not user:
                 raise http_exc.Forbidden
             
-            priv = Privilege(['user']) | Privilege(['download'], ['query'], [query.id])
+            priv = Privilege('/user') | Privilege('/download/query/{0}'.format(id_))
             if not priv.can(g.session['privilege']):
                 raise http_exc.Forbidden
 

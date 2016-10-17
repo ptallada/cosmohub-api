@@ -133,7 +133,7 @@ from .security import Token, Privilege
 # FIXME: refactor authentication code to remove cicle import on db
 @app.after_request
 def _refresh_token(response):
-    if g.session['privilege'] and Privilege(['user']).can(g.session['privilege']):
+    if g.session['privilege'] and Privilege('/user').can(g.session['privilege']):
         response.headers['X-Token'] = Token(g.session['user'], g.session['privilege']).dump()
     else:
         response.headers['X-Token'] = g.session['token']

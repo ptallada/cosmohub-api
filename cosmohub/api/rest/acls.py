@@ -31,8 +31,7 @@ from ..security import (
 )
 
 class AclCollection(Resource):
-    #decorators = [auth_required(Privilege(['user']) & Privilege(['admin']))]
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user/admin'))]
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
@@ -94,36 +93,36 @@ api_rest.add_resource(AclCollection, '/acls')
 
 
 class AclItem(Resource):
-    decorators = [auth_required(Privilege(['user']))]
+    decorators = [auth_required(Privilege('/user/admin'))]
 
     def patch(self, id_):
         parser = reqparse.RequestParser()
-        parser.add_argument('groups_granted', required=True, action='append')
-        parser.add_argument('groups_revoked', required=True, action='append')
+        parser.add_argument('groups_granted', action='append', default=[])
+        parser.add_argument('groups_revoked', action='append', default=[])
         parser.add_argument('notify', required=True, type=bool)
 
         attrs = parser.parse_args(strict=True)
         
+        # TODO: assert set(granted) disjoint set(revoked)
+        
         with transactional_session(db.session) as session:
             groups_granted = session.query(
-                model.User
-            ).filter(
-                model.User.id == g.session['user'].id
+                model.Group
             ).join(
-                model.User.groups_administered,
+                model.Group.users_admins, # @UndefinedVariable
             ).filter(
+                model.User.id == g.session['user'].id,
                 model.Group.name.in_(attrs['groups_granted']),
-            ).with_for_update().one().groups_administered
+            ).with_for_update().all()
             
             groups_revoked = session.query(
-                model.User
-            ).filter(
-                model.User.id == g.session['user'].id
+                model.Group
             ).join(
-                model.User.groups_administered,
+                model.Group.users_admins, # @UndefinedVariable
             ).filter(
+                model.User.id == g.session['user'].id,
                 model.Group.name.in_(attrs['groups_revoked']),
-            ).with_for_update().one().groups_administered
+            ).with_for_update().all()
             
             user = session.query(
                 model.User
@@ -143,28 +142,31 @@ class AclItem(Resource):
             for group in groups_granted:
                 if group not in user.acls:
                     user.acls[group] = model.ACL(group=group, user=user)
-                user.acls[group].is_granted = True
+                if user.acls[group].is_granted != True:
+                    user.acls[group].is_granted = True
             
             for group in groups_revoked:
                 if group not in user.acls:
                     user.acls[group] = model.ACL(group=group, user=user)
-                user.acls[group].is_granted = False
+                if user.acls[group].is_granted != False:
+                    user.acls[group].is_granted = False
             
-            session.flush()
+            if session.dirty:
+                session.flush()
             
-            if attrs['notify'] and session.dirty:
-                groups = [
-                    group
-                    for group in user.acls
-                    if user.acls[group].is_granted
-                ]
-                
-                mail.send_message(
-                    subject = current_app.config['MAIL_SUBJECTS']['acls_change'],
-                    recipients = [user.email],
-                    body = render_template('mail/acls_change.txt', groups=groups),
-                    html = render_template('mail/acls_change.html', groups=groups),
-                )
+                if attrs['notify']:
+                    groups = [
+                        group
+                        for group in user.acls
+                        if user.acls[group].is_granted
+                    ]
+                    
+                    mail.send_message(
+                        subject = current_app.config['MAIL_SUBJECTS']['acls_updated'],
+                        recipients = [user.email],
+                        body = render_template('mail/acls_updated.txt', user=user, groups=groups),
+                        html = render_template('mail/acls_updated.html', user=user, groups=groups),
+                    )
             
             g.session['track']({
                 't' : 'event',

@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.2.0] - 2016-10-17
+### Added
+- Add `is_private` column to `Group`. (Pau Tallada)
+- Notify admins when users request membership. (Pau Tallada)
+- Notify users when their memberships have changed. (Pau Tallada)
+
+### Changed
+- Simplify `Privilege` system. (Pau Tallada)
+- Rename and move `QueryCallback` endpoint. (Pau Tallada)
+
+### Fixed
+- Empty lists are not enough for required parameters. (Pau Tallada)
+- Do not send `statusdir` parameter to  WebHCat. (Pau Tallada)
+- Reorder queries to handle deferred columns. (Pau Tallada)
+
+
 ## [2.1.0] - 2016-10-11
 ### Added
 - Add `citation` and `distribution` fields. (Pau Tallada)

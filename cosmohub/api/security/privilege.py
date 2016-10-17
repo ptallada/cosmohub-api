@@ -1,7 +1,5 @@
 import new
 
-from itertools import izip_longest
-
 class PrivilegeComparable(object):
     def can(self):
         raise NotImplementedError
@@ -25,18 +23,12 @@ class PrivilegeComparable(object):
         return p
 
 class Privilege(PrivilegeComparable):
-    def __init__(self, *attrs):
-        self._attrs = attrs
+    def __init__(self, attr):
+        self._attr = attr
     
     @property
-    def attrs(self):
-        return self._attrs
+    def attr(self):
+        return self._attr
     
     def can(self, privilege):
-        for pair in izip_longest(self._attrs, privilege.attrs, fillvalue=[]):
-            if set(pair[0]) <= set(pair[1]):
-                continue
-            else:
-                return False
-        
-        return True
+        return privilege._attr.startswith(self._attr)

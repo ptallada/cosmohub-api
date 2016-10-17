@@ -1,0 +1,18 @@
+<p>Hi,</p>
+
+<p>The user <u>{{ user.name }}</u> with email address <u>{{ user.name }}</u> has requested
+access to one or more projects which you administer:</p>
+
+<ul>
+  {% for group in groups %}
+    <li>{{ group.name }}</li>
+  {% endfor %}
+</ul>
+
+<p>Please <a href="{{ url }}">click here</a> to grant or deny this request:</p>
+
+<p>{{url}}</p>
+
+<p>Best regards,</p>
+
+<p>The CosmoHub team.</p>

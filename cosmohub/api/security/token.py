@@ -26,7 +26,7 @@ class Token(object):
     def dump(self):
         token = {
             'user' : marshal(self._user, fields.UserToken),
-            'privilege' : self._privilege.attrs,
+            'privilege' : self._privilege.attr,
         }
         
         return self._serializer.dumps(token)

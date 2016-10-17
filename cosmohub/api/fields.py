@@ -74,6 +74,7 @@ Group = {
     'id'          : fields.Integer,
     'name'        : fields.String,
     'description' : fields.String,
+    'is_private'  : fields.Boolean,
     'ts_created'  : fields.DateTime('iso8601'),
 }
 

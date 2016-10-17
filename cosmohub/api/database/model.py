@@ -335,6 +335,13 @@ class Group(db.Model):
         ),
        group = 'text',
     )
+    is_private = Column(
+        'is_private',
+        Boolean,
+        nullable=False,
+        server_default='FALSE',
+        comment='Whether Users can ask for membership',
+    )
     ts_created = Column(
         'ts_created',
         DateTime,
