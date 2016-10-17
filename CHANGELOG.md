@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Validate email address also on password reset. (Pau Tallada)
 
 
 ## [2.2.0] - 2016-10-17

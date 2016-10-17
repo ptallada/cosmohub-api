@@ -98,6 +98,11 @@ class UserItem(Resource):
             if not privilege.can(g.session['privilege']):
                 raise http_exc.Unauthorized
             
+            # FIXME: Temporarily validate email here
+            privilege = Privilege('/password_reset/{0}'.format(adler32(user.password.hash)))
+            if privilege.can(g.session['privilege']):
+                user.ts_email_confirmed = func.now()
+            
             for key, value in attrs.iteritems():
                 setattr(user, key, value)
                 
