@@ -15,6 +15,7 @@ from flask_restful import (
     Resource,
 )
 from sqlalchemy.orm import (
+    contains_eager,
     joinedload,
     undefer_group,
 )
@@ -162,8 +163,12 @@ class UserItem(Resource):
                 model.Group
             ).filter(
                 model.Group.name.in_(requested_groups),
+            ).join(
+                model.Group.users_admins, # @UndefinedVariable
             ).options(
-                joinedload('users_admins'),
+                contains_eager(
+                    model.Group.users_admins, # @UndefinedVariable
+                ),
             ).with_for_update().all()
 
             if len(groups) != len(requested_groups):
