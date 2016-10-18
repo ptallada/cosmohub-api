@@ -206,25 +206,29 @@ class UserItem(Resource):
             
             recipients = set()
             for group in groups:
-                for user in group.users_admins:
-                    recipients.add(user.email)
+                for admin in group.users_admins:
+                    recipients.add(admin.email)
+            recipients = list(recipients)
             
-            mail.send_message(
-                subject = current_app.config['MAIL_SUBJECTS']['acl_request'],
-                recipients = recipients,
-                body = render_template(
-                    'mail/acl_request.txt',
-                    user=user,
-                    groups=groups,
-                    url=acl_update_url,
-                ),
-                html = render_template(
-                    'mail/acl_request.html',
-                    user=user,
-                    groups=groups,
-                    url=acl_update_url,
-                ),
-            )
+            acl_update_url += '?' + urllib.urlencode({ 'u' : user.email })
+            
+            if recipients:
+                mail.send_message(
+                    subject = current_app.config['MAIL_SUBJECTS']['acls_request'],
+                    recipients = recipients,
+                    body = render_template(
+                        'mail/acls_request.txt',
+                        user=user,
+                        groups=groups,
+                        url=acl_update_url,
+                    ),
+                    html = render_template(
+                        'mail/acls_request.html',
+                        user=user,
+                        groups=groups,
+                        url=acl_update_url,
+                    ),
+                )
             
             g.session['track']({
                 't' : 'event',

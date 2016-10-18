@@ -1,7 +1,7 @@
 <p>Hi,</p>
 
-<p>The user <u>{{ user.name }}</u> with email address <u>{{ user.name }}</u> has requested
-access to one or more projects which you administer:</p>
+<p>The user <u>{{ user.name }}</u> with email address <u>{{ user.email }}</u>
+has requested access to one or more projects which you administer:</p>
 
 <ul>
   {% for group in groups %}
@@ -9,9 +9,7 @@ access to one or more projects which you administer:</p>
   {% endfor %}
 </ul>
 
-<p>Please <a href="{{ url }}">click here</a> to grant or deny this request:</p>
-
-<p>{{url}}</p>
+<p>Please <a href="{{ url }}">click here</a> to grant or deny this request.</p>
 
 <p>Best regards,</p>
 
