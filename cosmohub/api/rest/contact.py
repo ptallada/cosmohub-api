@@ -18,9 +18,9 @@ class Contact(Resource):
         
         mail.send_message(
             sender = attrs['email'],
-            subject = 'Contact request: ' + attrs['subject'],
+            subject = attrs['subject'],
             recipients = ['cosmohub@pic.es'],
-            body = 'FROM: ' + attrs['email'] + '\n\n' + attrs['message'],
+            body = attrs['message'],
         )
         
         g.session['track']({
