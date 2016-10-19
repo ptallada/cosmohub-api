@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Validate email address also on password reset. (Pau Tallada)
 
+### Fixed
+- Fix `File` downloads. (Pau Tallada)
+
 
 ## [2.2.0] - 2016-10-17
 ### Added

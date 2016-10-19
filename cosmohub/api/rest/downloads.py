@@ -193,7 +193,7 @@ class FileResource(Resource):
                 't' : 'event',
                 'ec' : 'downloads',
                 'ea' : self._track_action,
-                'el' : file.id,
+                'el' : file_.id,
             })
             
             return self._build_response(reader, path, range_header)
