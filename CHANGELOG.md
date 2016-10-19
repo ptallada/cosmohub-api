@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.2.1] - 2016-10-19
+### Added
+- Validate email address also on password reset. (Pau Tallada)
+
+### Changed
+- Tiny change in acknowledgement headers. (Pau Tallada)
+
+### Fixed
+- Fix regresion on user register. (Pau Tallada)
+- Fix `File` downloads. (Pau Tallada)
+
+
 ## [2.2.0] - 2016-10-17
 ### Added
 - Add `is_private` column to `Group`. (Pau Tallada)
