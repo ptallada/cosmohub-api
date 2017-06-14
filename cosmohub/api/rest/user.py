@@ -190,15 +190,15 @@ class UserItem(Resource):
             email_confirm_url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
             
             mail.send_message(
-                subject = current_app.config['MAIL_SUBJECTS']['user_registered'],
+                subject = current_app.config['MAIL_SUBJECTS']['welcome_user'],
                 recipients = [user.email],
                 body = render_template(
-                    'mail/user_registered.txt',
+                    'mail/welcome_user.txt',
                     user=user,
                     url=email_confirm_url
                 ),
                 html = render_template(
-                    'mail/user_registered.html',
+                    'mail/welcome_user.html',
                     user=user,
                     url=email_confirm_url
                 ),

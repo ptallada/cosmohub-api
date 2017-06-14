@@ -90,7 +90,7 @@ MAIL_SUBJECTS = {
     'email_confirm' : u'Confirm your email address',
     'password_reset' : u'Reset your CosmoHub password',
     'query_ready' : u'Your catalog (#{id}) is ready!',
-    'user_registered' : u'Hi {name}, welcome to CosmoHub!',
+    'welcome_user' : u'Activate your CosmoHub account',
 }
 
 RECAPTCHA_ENABLED = True

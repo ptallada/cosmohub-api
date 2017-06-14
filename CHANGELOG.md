@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Changed
+- Rename email template `user_registered` to `welcome_user`. (Pau Tallada)
 
 
 ## [2.2.2] - 2017-05-08
