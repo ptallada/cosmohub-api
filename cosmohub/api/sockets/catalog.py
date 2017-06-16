@@ -14,6 +14,7 @@ from urllib import urlencode
 from .. import release
 from ..security.authentication import verify_token
 from ..hadoop.hive import parse_progress
+from ..io.jsonencoder import WSEncoder
 
 log = logging.getLogger(__name__)
 
@@ -160,6 +161,10 @@ def _execute_query(ws, cursor, sql):
         
         data = cursor.fetchall()
         
+        _raise_if_cancelled(ws)
+        
+        finish=time.time()
+        
         limited = False
         if len(data) > 10000:
             limited = True
@@ -169,17 +174,18 @@ def _execute_query(ws, cursor, sql):
         cols = [col[0][2:] for col in cursor.description]
         df = pd.DataFrame(data, columns=cols)
         
-        _raise_if_cancelled(ws)
-        
-        finish=time.time()
+        rs = [
+            {'name': name, 'values': values}
+            for name, values in df.iteritems()
+        ]
         
         ws.send(json.dumps({
             'type' : 'query',
             'data' : {
-                'resultset' : df.to_dict('list'),
+                'resultset' : rs,
                 'limited' : limited,
             }
-        }))
+        }, cls=WSEncoder))
         
         g.session['track']({
             't' : 'event',
