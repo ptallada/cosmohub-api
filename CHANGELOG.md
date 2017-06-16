@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Fix trigger when resolving ACL. (Pau Tallada)
+- Fix ACL email template typo. (Pau Tallada)
 
 
 ## [2.2.2] - 2017-05-08
