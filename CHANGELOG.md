@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Changed
 - Rename email template `user_registered` to `welcome_user`. (Pau Tallada)
+- Notify superusers upon new user registration. (Pau Tallada)
 
 ### Fixed
 - Fix trigger when resolving ACL. (Pau Tallada)

@@ -1,0 +1,10 @@
+The user '{{ user.name }}' with email address '{{ user.email }}' has just
+registered to CosmoHub{% if groups %} and has requested access to the following
+projects:
+
+{% for group in groups %}
+ - {{ group.name }}
+{% endfor %}
+
+{% else %}.
+{% endif %}
