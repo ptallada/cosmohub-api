@@ -272,18 +272,26 @@ event.listen(
             END;
             $$ language 'plpgsql' VOLATILE;
             
-            CREATE TRIGGER acl__ts_resolved__before_update
-            BEFORE UPDATE
-            ON acl
-            FOR EACH ROW
-            WHEN (OLD.is_granted != NEW.is_granted)
-            EXECUTE PROCEDURE acl__ts_resolved__before_insert_or_update();
-            
             CREATE TRIGGER acl__ts_resolved__before_insert
             BEFORE INSERT
             ON acl
             FOR EACH ROW
             WHEN (NEW.is_granted IS NOT NULL)
+            EXECUTE PROCEDURE acl__ts_resolved__before_insert_or_update();
+            
+            CREATE TRIGGER acl__ts_resolved__before_update
+            BEFORE UPDATE
+            ON acl
+            FOR EACH ROW
+            WHEN (CASE
+                WHEN OLD.is_granted IS NULL THEN 
+                    NEW.is_granted IS NOT NULL
+                WHEN NEW.is_granted IS NULL THEN
+                    OLD.is_granted IS NOT NULL
+                ELSE
+                    OLD.is_granted <> NEW.is_granted
+                END
+            )
             EXECUTE PROCEDURE acl__ts_resolved__before_insert_or_update();
         """)
     )

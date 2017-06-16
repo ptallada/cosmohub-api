@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Rename email template `user_registered` to `welcome_user`. (Pau Tallada)
 
+### Fixed
+- Fix trigger when resolving ACL. (Pau Tallada)
+
 
 ## [2.2.2] - 2017-05-08
 ### Added
