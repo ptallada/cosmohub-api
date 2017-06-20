@@ -89,9 +89,10 @@ MAIL_SUBJECTS = {
     'acls_request' : u'Group membership request',
     'email_confirm' : u'Confirm your email address',
     'password_reset' : u'Reset your CosmoHub password',
+    'query_failed' : u'The CosmoHub catalog (#{id}) did not finish successfully',
     'query_ready' : u'Your CosmoHub catalog (#{id}) is ready!',
-    'welcome_user' : u'Activate your CosmoHub account',
     'user_registered' : u'New CosmoHub user',
+    'welcome_user' : u'Activate your CosmoHub account',
 }
 
 RECAPTCHA_ENABLED = True

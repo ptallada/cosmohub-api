@@ -1,0 +1,7 @@
+The catalog request (#{{ query.id }}) has not finished successfully.
+
+ - query: {{ query.sql }}
+ - job_id: {{  query.job_id }}
+ - status: {{ query.status }}
+ - exit code: {{  exit_code }}
+ - format: {{ query.format }}
