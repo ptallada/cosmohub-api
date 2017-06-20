@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Added
 - Notify superuser upon catalog failure. (Pau Tallada)
+- Show all users in admin view. (Pau Tallada)
 
 ### Changed
 - Rename email template `user_registered` to `welcome_user`. (Pau Tallada)
