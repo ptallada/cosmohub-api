@@ -118,10 +118,14 @@ def _raise_if_cancelled(ws):
         return
     
     msg = json.loads(msg)
-    if msg['type'] == 'cancel':
+    if msg['type'] == 'ping':
+        ws.send(json.dumps({
+            'type' : 'pong',
+        }))
+    elif msg['type'] == 'cancel':
         raise QueryCancelledException()
-    
-    raise ValueError('Invalid message received')
+    else:
+        raise ValueError('Invalid message received')
 
 def _execute_query(ws, cursor, sql):
     try:
@@ -243,6 +247,11 @@ def catalog(ws):
                 
                 elif msg['type'] == 'query':
                     _execute_query(ws, cursor, msg['data']['sql'])
+                
+                elif msg['type'] == 'ping':
+                    ws.send(json.dumps({
+                        'type' : 'pong',
+                    }))
                 
                 else:
                     break

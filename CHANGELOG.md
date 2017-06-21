@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Rename email template `user_registered` to `welcome_user`. (Pau Tallada)
 - Notify superusers upon new user registration. (Pau Tallada)
 - Update hive progress update mechanism. (Pau Tallada)
+- Detect half-open connections using `ping`/`pong` messages. (Pau Tallada)
 
 ### Fixed
 - Fix trigger when resolving ACL. (Pau Tallada)
