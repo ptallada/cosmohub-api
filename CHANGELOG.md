@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.2.2] - 2017-05-08
+### Added
+- Add `DELETED` state to query. (Pau Tallada)
+
+### Fixed
+- Manually add 'exp' to token payload to fix `itsdangerous` misbehaviour. (Pau Tallada)
+
+
 ## [2.2.1] - 2016-10-19
 ### Added
 - Validate email address also on password reset. (Pau Tallada)

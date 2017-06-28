@@ -694,6 +694,7 @@ class Query(db.Model):
         FAILED    = 'FAILED'
         KILLED    = 'CANCELLED'
         UNKNOWN   = 'UNKNOWN'
+        DELETED   = 'DELETED'
         
         def is_final(self):
             return self in (
@@ -701,6 +702,7 @@ class Query(db.Model):
                 self.FAILED,
                 self.KILLED,
                 self.UNKNOWN,
+                self.DELETED
             )
 
     _StatusType = Enum(*[s.value for s in Status], name='ty__query__status')
