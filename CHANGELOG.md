@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Add `DELETED` state to query. (Pau Tallada)
+
 ### Fixed
 - Manually add 'exp' to token payload to fix `itsdangerous` misbehaviour. (Pau Tallada)
 
