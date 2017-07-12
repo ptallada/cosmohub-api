@@ -131,30 +131,27 @@ def _execute_query(ws, cursor, sql):
         
         _raise_if_cancelled(ws)
         
-        status = cursor.poll().operationState
+        status = cursor.poll(True)
         # If user disconnects, stop polling and cancel query
-        while ws.connected and (status not in [
+        while ws.connected and (status.operationState not in [
             hive.ttypes.TOperationState.FINISHED_STATE,
             hive.ttypes.TOperationState.CANCELED_STATE,
             hive.ttypes.TOperationState.CLOSED_STATE,
             hive.ttypes.TOperationState.ERROR_STATE,
         ]):
-            logs = cursor.fetch_logs()
-            
             _raise_if_cancelled(ws)
             
-            if logs:
-                progress = parse_progress(logs[-1])
-                ws.send(json.dumps({
-                    'type' : 'progress',
-                    'data' : {
-                        'progress' : progress,
-                    }
-                }))
+            progress = parse_progress(status.progressUpdateResponse)
+            ws.send(json.dumps({
+                'type' : 'progress',
+                'data' : {
+                    'progress' : progress,
+                }
+            }))
+            
+            status = cursor.poll(True)
 
-            status = cursor.poll().operationState
-
-        if status != hive.ttypes.TOperationState.FINISHED_STATE:
+        if status.operationState != hive.ttypes.TOperationState.FINISHED_STATE:
             raise Exception('Real-time query failed to complete successfully: %s', sql)
         
         _raise_if_cancelled(ws)
@@ -163,7 +160,7 @@ def _execute_query(ws, cursor, sql):
         
         _raise_if_cancelled(ws)
         
-        finish=time.time()
+        finish = time.time()
         
         limited = False
         if len(data) > 10000:
