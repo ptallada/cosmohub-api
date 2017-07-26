@@ -35,8 +35,6 @@ class AclCollection(Resource):
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
-            Admin_ACL = aliased(model.ACL)
-            
             users = session.query(
                 model.User
             ).join(
@@ -47,15 +45,6 @@ class AclCollection(Resource):
                     model.Group.id == model.ACL.group_id,
                 ),
                 isouter=True,
-            ).join(
-                Admin_ACL,
-                and_(
-                    Admin_ACL.group_id == model.ACL.group_id,
-                    Admin_ACL.is_granted,
-                    Admin_ACL.is_admin,
-                ),
-            ).filter(
-                Admin_ACL.user_id == g.session['user'].id
             ).options(
                 contains_eager(
                     model.User.acls, # @UndefinedVariable

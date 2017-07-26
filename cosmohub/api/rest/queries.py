@@ -237,7 +237,31 @@ class QueryDone(Resource):
             
             finish_query(query, status)
             
-            session.flush()
+            if query.status != model.Query.Status.SUCCEEDED.value:
+                superusers = session.query(
+                    model.User
+                ).filter_by(
+                    is_superuser=True
+                ).all()
+                
+                recipients = [superuser.email for superuser in superusers]
+                if recipients:
+                    mail.send_message(
+                        subject = current_app.config['MAIL_SUBJECTS']['query_failed'].format(id=query.id),
+                        recipients = recipients,
+                        body = render_template(
+                            'mail/query_failed.txt',
+                            query=query,
+                            exit_code=status['exitValue']
+                        ),
+                        html = render_template(
+                            'mail/query_failed.html',
+                            query=query,
+                            exit_code=status['exitValue']
+                        ),
+                    )
+                
+                return
             
             token = Token(
                 query.user,

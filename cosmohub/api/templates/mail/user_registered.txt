@@ -1,13 +1,10 @@
-Hi {{ user.name }},
+The user '{{ user.name }}' with email address '{{ user.email }}' has just
+registered to CosmoHub{% if groups %} and has requested access to the following
+projects:
 
-Welcome to CosmoHub!
+{% for group in groups %}
+ - {{ group.name }}
+{% endfor %}
 
-Please open the following link to validate your email address and activate your
-account:
-
-{{ url }}
-
-If you did not sign up for CosmoHub, please disregard this message.
-
-Cheers,
-The CosmoHub team.
+{% else %}.
+{% endif %}

@@ -170,10 +170,16 @@ class UserItem(Resource):
                     model.Group.users_admins, # @UndefinedVariable
                 ),
             ).with_for_update().all()
-
+            
+            superusers = session.query(
+                model.User
+            ).filter_by(
+                is_superuser=True
+            ).all()
+            
             if len(groups) != len(requested_groups):
                 raise http_exc.BadRequest("One or more of the requested groups do not exist.")
-
+            
             user = model.User(**attrs)
             for group in groups:
                 user.acls[group] = model.ACL(group=group, user=user)
@@ -190,15 +196,15 @@ class UserItem(Resource):
             email_confirm_url += '?' + urllib.urlencode({ 'auth_token' : token.dump() })
             
             mail.send_message(
-                subject = current_app.config['MAIL_SUBJECTS']['user_registered'],
+                subject = current_app.config['MAIL_SUBJECTS']['welcome_user'],
                 recipients = [user.email],
                 body = render_template(
-                    'mail/user_registered.txt',
+                    'mail/welcome_user.txt',
                     user=user,
                     url=email_confirm_url
                 ),
                 html = render_template(
-                    'mail/user_registered.html',
+                    'mail/welcome_user.html',
                     user=user,
                     url=email_confirm_url
                 ),
@@ -227,6 +233,23 @@ class UserItem(Resource):
                         user=user,
                         groups=groups,
                         url=acl_update_url,
+                    ),
+                )
+            
+            recipients = [superuser.email for superuser in superusers]
+            if recipients:
+                mail.send_message(
+                    subject = current_app.config['MAIL_SUBJECTS']['user_registered'],
+                    recipients = recipients,
+                    body = render_template(
+                        'mail/user_registered.txt',
+                        user=user,
+                        groups=groups,
+                    ),
+                    html = render_template(
+                        'mail/user_registered.html',
+                        user=user,
+                        groups=groups,
                     ),
                 )
             

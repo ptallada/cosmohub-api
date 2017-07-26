@@ -46,7 +46,7 @@ setup(
         'passlib',
         'psycogreen',
         'psycopg2',
-        'pyhive[hive] >= 0.2.0',
+        'pyhive[hive] == 0.3.0.dev0',
         'pyhdfs',
         'pyparsing',
         'sasl',

@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.2.3] - 2017-07-26
+### Added
+- Notify superuser upon catalog failure. (Pau Tallada)
+- Show all users in admin view. (Pau Tallada)
+
+### Changed
+- Rename email template `user_registered` to `welcome_user`. (Pau Tallada)
+- Notify superusers upon new user registration. (Pau Tallada)
+- Update hive progress update mechanism. (Pau Tallada)
+- Detect half-open connections using `ping`/`pong` messages. (Pau Tallada)
+
+### Fixed
+- Fix trigger when resolving ACL. (Pau Tallada)
+- Fix ACL email template typo. (Pau Tallada)
+- Return resultset in a list to preserve column order. (Pau Tallada)
+
+
 ## [2.2.2] - 2017-05-08
 ### Added
 - Add `DELETED` state to query. (Pau Tallada)

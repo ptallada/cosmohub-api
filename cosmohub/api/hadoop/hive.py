@@ -46,8 +46,20 @@ class HiveQLProgress(object):
     
         return (done, running, failed, total-done)
 
-def parse_progress(message):
-    return HiveQLProgress.parse(message)
+def parse_progress(report):
+    idx = {
+        'TOTAL'     : report.headerNames.index('TOTAL'),
+        'COMPLETED' : report.headerNames.index('COMPLETED'),
+        'RUNNING'   : report.headerNames.index('RUNNING'),
+        'FAILED'    : report.headerNames.index('FAILED'),
+    }
+    
+    total = sum([int(l[idx['TOTAL']]) for l in report.rows])
+    completed = sum([int(l[idx['COMPLETED']]) for l in report.rows])
+    running = sum([int(l[idx['RUNNING']]) for l in report.rows])
+    failed = sum([int(l[idx['FAILED']]) for l in report.rows])
+    
+    return (completed, running, failed, total-completed)
 
 def reflect_catalogs(metastore_uri, database):
     engine = create_engine(metastore_uri)

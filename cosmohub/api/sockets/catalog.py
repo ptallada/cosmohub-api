@@ -14,6 +14,7 @@ from urllib import urlencode
 from .. import release
 from ..security.authentication import verify_token
 from ..hadoop.hive import parse_progress
+from ..io.jsonencoder import WSEncoder
 
 log = logging.getLogger(__name__)
 
@@ -117,10 +118,14 @@ def _raise_if_cancelled(ws):
         return
     
     msg = json.loads(msg)
-    if msg['type'] == 'cancel':
+    if msg['type'] == 'ping':
+        ws.send(json.dumps({
+            'type' : 'pong',
+        }))
+    elif msg['type'] == 'cancel':
         raise QueryCancelledException()
-    
-    raise ValueError('Invalid message received')
+    else:
+        raise ValueError('Invalid message received')
 
 def _execute_query(ws, cursor, sql):
     try:
@@ -130,35 +135,36 @@ def _execute_query(ws, cursor, sql):
         
         _raise_if_cancelled(ws)
         
-        status = cursor.poll().operationState
+        status = cursor.poll(True)
         # If user disconnects, stop polling and cancel query
-        while ws.connected and (status not in [
+        while ws.connected and (status.operationState not in [
             hive.ttypes.TOperationState.FINISHED_STATE,
             hive.ttypes.TOperationState.CANCELED_STATE,
             hive.ttypes.TOperationState.CLOSED_STATE,
             hive.ttypes.TOperationState.ERROR_STATE,
         ]):
-            logs = cursor.fetch_logs()
-            
             _raise_if_cancelled(ws)
             
-            if logs:
-                progress = parse_progress(logs[-1])
-                ws.send(json.dumps({
-                    'type' : 'progress',
-                    'data' : {
-                        'progress' : progress,
-                    }
-                }))
+            progress = parse_progress(status.progressUpdateResponse)
+            ws.send(json.dumps({
+                'type' : 'progress',
+                'data' : {
+                    'progress' : progress,
+                }
+            }))
+            
+            status = cursor.poll(True)
 
-            status = cursor.poll().operationState
-
-        if status != hive.ttypes.TOperationState.FINISHED_STATE:
+        if status.operationState != hive.ttypes.TOperationState.FINISHED_STATE:
             raise Exception('Real-time query failed to complete successfully: %s', sql)
         
         _raise_if_cancelled(ws)
         
         data = cursor.fetchall()
+        
+        _raise_if_cancelled(ws)
+        
+        finish = time.time()
         
         limited = False
         if len(data) > 10000:
@@ -169,17 +175,18 @@ def _execute_query(ws, cursor, sql):
         cols = [col[0][2:] for col in cursor.description]
         df = pd.DataFrame(data, columns=cols)
         
-        _raise_if_cancelled(ws)
-        
-        finish=time.time()
+        rs = [
+            {'name': name, 'values': values}
+            for name, values in df.iteritems()
+        ]
         
         ws.send(json.dumps({
             'type' : 'query',
             'data' : {
-                'resultset' : df.to_dict('list'),
+                'resultset' : rs,
                 'limited' : limited,
             }
-        }))
+        }, cls=WSEncoder))
         
         g.session['track']({
             't' : 'event',
@@ -240,6 +247,11 @@ def catalog(ws):
                 
                 elif msg['type'] == 'query':
                     _execute_query(ws, cursor, msg['data']['sql'])
+                
+                elif msg['type'] == 'ping':
+                    ws.send(json.dumps({
+                        'type' : 'pong',
+                    }))
                 
                 else:
                     break

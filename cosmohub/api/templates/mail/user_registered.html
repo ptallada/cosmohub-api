@@ -1,11 +1,12 @@
-<p>Hi {{ user.name }},</p>
+<p>The user <u>{{ user.name }}</u> with email address <u>{{ user.email }}</u>
+has just registered to CosmoHub{% if groups %} and has requested access to the
+following projects:</p>
 
-<p>Welcome to CosmoHub!</p>
+<ul>
+  {% for group in groups %}
+    <li>{{ group.name }}</li>
+  {% endfor %}
+</ul>
 
-<p>Please <a href="{{ url }}">click here</a> to validate your email address and activate your
-account:</p>
-
-<p>If you did not sign up for CosmoHub, please disregard this message.</p>
-
-<p>Cheers, <br>
-The CosmoHub team.</p>
+{% else %}.</p>
+{% endif %}

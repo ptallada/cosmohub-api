@@ -1,6 +1,6 @@
 Hi,
 
-The user '{{ user.name }}' with email address '{{ user.name }}' has requested
+The user '{{ user.name }}' with email address '{{ user.email }}' has requested
 access to one or more projects which you administer:
 
 {% for group in groups %}
