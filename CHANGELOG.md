@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Fixed
+- Handle `21000` SQL error as a syntax error. (Pau Tallada)
 
 
 ## [2.2.3] - 2017-07-26

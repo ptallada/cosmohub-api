@@ -90,7 +90,7 @@ def _check_syntax(ws, cursor, sql):
         finish = time.time()
         status = e.args[0].status
         prefix = "Error while compiling statement: FAILED: "
-        if status.sqlState in ['42000', '42S02']:
+        if status.sqlState in ['21000', '42000', '42S02']:
             ws.send(json.dumps({
                 'type' : 'syntax',
                 'error' : {
