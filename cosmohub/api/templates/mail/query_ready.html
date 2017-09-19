@@ -1,3 +1,7 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+
 <p>Hi {{ query.user.name }},</p>
 
 <p>Your catalog request (#{{ query.id }}) has been produced as requested:</p>
@@ -14,5 +18,6 @@
 <p>Please, remember to follow the citation guide if you use any of this data in
 your research.</p>
 
-<p>Thanks for using CosmoHub, <br>
-The CosmoHub team.</p>
+<p>Thanks for using CosmoHub,</p>
+
+{% endblock content %}

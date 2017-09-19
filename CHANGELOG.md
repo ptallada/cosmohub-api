@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Add base template for HTML emails with logo and footer. (Pau Tallada)
+
 ### Changed
 - Moved old documentation. (Pau Tallada)
 
