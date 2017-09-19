@@ -11,7 +11,7 @@ class Hive(object):
     _HIVE_ENDPOINT = 'hive'
     _JOBS_ENDPOINT = 'jobs/'
     
-    def __init__(self, url, username, database):
+    def __init__(self, url, username):
         """\
         Initializes a Hive interface object.
         
@@ -22,47 +22,34 @@ class Hive(object):
         :param database: name of the Hive database to use
         :type database: str
         """
-        self._database = database
+        #eliminar database i pasarlo amb script als parametres
+        #self._database = database
         self._hive_url = urljoin(url, self._HIVE_ENDPOINT)
         self._jobs_url = urljoin(url, self._JOBS_ENDPOINT)
         self._params = { 'user.name' : username }
     
-    def submit(self, query, path, format_, callback_url=None):
+#     
+    def submit(self, script, callback_url=None):
         """\
         Submits a HiveQL query for execution and returns its ID.
         
         Optionally, a URL callback can be defined to be called upon job completion.
         Raises requests.exceptions.HTTPError if the script could not be submitted.
-        
-        :param query: Base SQL SELECT statement
-        :type query: str
-        :param path: Where to store the results
-        :type path: str
-        :param format_: Serialization method for the results on disk
-        :type format_: str
-        :return: HiveQL script
-        :rtype: str
         :param callback_url: URL to call on job completion
         :type callback_url: str
+        :param script: format config
+        :type script: str
         :return: Job unique identifier
         :rtype: str 
         """
-        script = current_app.config['WEBHCAT_SCRIPT_TEMPLATE'].format(
-            common_config = current_app.config['WEBHCAT_SCRIPT_COMMON'],
-            compression_config = format_.compression_config,
-            database = self._database,
-            path = path,
-            row_format = format_.row_format,
-            query = query
-        )
         
         data = {
             'execute' : script,
         }
+        
         if callback_url:
-            data.update({
-            'callback' : callback_url,
-        })
+            data.update({'callback' : callback_url,})
+        
         r = requests.post(self._hive_url, params=self._params, data=data)
         r.raise_for_status()
         

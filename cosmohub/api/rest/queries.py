@@ -61,7 +61,6 @@ class QueryCollection(Resource):
             hive_rest = webhcat.Hive(
                 url = current_app.config['WEBHCAT_BASE_URL'],
                 username = 'jcarrete',
-                database = current_app.config['HIVE_DATABASE']
             )
             
             try:
@@ -79,6 +78,7 @@ class QueryCollection(Resource):
                     session.flush()
                     
                     try:
+                        print current_app.formats
                         format_ = current_app.formats[format_]
                     except KeyError:
                         raise http_exc.BadRequest("Unsupported format requested.")
@@ -90,12 +90,17 @@ class QueryCollection(Resource):
                         netloc=current_app.config['WEBHCAT_CALLBACK_NETLOC']
                     ).geturl()
                     
-                    query.job_id = hive_rest.submit(
-                        query = sql,
+                    script = current_app.config['WEBHCAT_SCRIPT_TEMPLATE'].format(
+                        
+                        common_config = current_app.config['WEBHCAT_SCRIPT_COMMON'],
+                        compression_config = format_.compression_config,
+                        database = current_app.config['HIVE_DATABASE'],
                         path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id)),
-                        format_ = format_,
-                        callback_url = url,
+                        row_format = format_.row_format,
+                        query = query
                     )
+                    
+                    query.job_id = hive_rest.submit(script,url)
                     
                     g.session['track']({
                         't' : 'event',
@@ -179,6 +184,51 @@ def finish_query(query, status):
     
     data = current_app.formats[query.format](reader, query.schema, comments)
     query.size = data.seek(0, io.SEEK_END)
+    
+def finish_table(query, status):
+    cursor=hive.connect(
+        current_app.config['HIVE_HOST'],
+        username='mriera',
+        database=current_app.config['HIVE_DATABASE']
+    ).cursor()
+    
+    client=HdfsClient(
+        hosts=current_app.config['HADOOP_NAMENODES'],
+        user_name='mriera'
+    )
+    
+    if not model.Query.Status[status['status']['state']].is_final():
+        return
+    
+    # Update query columns upon completion
+    query.status = model.Query.Status[status['status']['state']].value
+    
+    query.ts_started = datetime.utcfromtimestamp(status['status']['startTime']/1000.)
+    query.ts_finished = datetime.utcfromtimestamp(status['status']['finishTime']/1000.)
+    exit_code = status['exitValue']
+    
+    if exit_code and int(exit_code) != 0:
+        query.status = model.Query.Status.FAILED.value # @UndefinedVariable
+        return
+    
+    if query.status != model.Query.Status.SUCCEEDED.value: # @UndefinedVariable
+        return
+    
+#     path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id))
+#     if not path.startswith('/'):
+#         path = os.path.join(client.get_home_directory(), path)
+#     
+#     reader = HDFSPathReader(client, path)
+    
+    context = {
+        'query' : query,
+        'duration' : timedelta(seconds=int((query.ts_finished-query.ts_started).total_seconds())),
+        'user' : query.user,
+    }
+    
+    comments = render_template_string(current_app.config['QUERY_COMMENTS'], **context)
+    
+    query.size = 0
 
 class QueryCancel(Resource):
     decorators = [auth_required(Privilege('/user'))]
@@ -187,7 +237,7 @@ class QueryCancel(Resource):
         hive_rest=webhcat.Hive(
             url=current_app.config['WEBHCAT_BASE_URL'],
             username='jcarrete',
-            database=current_app.config['HIVE_DATABASE']
+            #database=current_app.config['HIVE_DATABASE']
         )
         @retry_on_serializable_error
         def cancel_query(id_):
@@ -215,11 +265,11 @@ class QueryCancel(Resource):
 api_rest.add_resource(QueryCancel, '/queries/<int:id_>/cancel')
 
 class QueryDone(Resource):
-    def get(self, id_):
+    def get(self, id_):  
+    
         hive_rest=webhcat.Hive(
             url=current_app.config['WEBHCAT_BASE_URL'],
             username='jcarrete',
-            database=current_app.config['HIVE_DATABASE']
         )
         
         with transactional_session(db.session) as session:
@@ -236,7 +286,13 @@ class QueryDone(Resource):
             
             status = hive_rest.status(query.job_id)
             
-            finish_query(query, status)
+            if query.format == 'table':
+                
+                finish_table(query, status)
+            
+            else:
+                
+                finish_query(query, status)
             
             if query.status != model.Query.Status.SUCCEEDED.value:
                 superusers = session.query(

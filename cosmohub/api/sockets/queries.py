@@ -67,7 +67,6 @@ def queries(ws):
         hive_rest = webhcat.Hive(
             url = current_app.config['WEBHCAT_BASE_URL'],
             username = 'jcarrete',
-            database = current_app.config['HIVE_DATABASE']
         )
         
         try:

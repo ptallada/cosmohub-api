@@ -6,4 +6,5 @@ from . import (
     groups,
     queries,
     user,
+    tables,
 )
