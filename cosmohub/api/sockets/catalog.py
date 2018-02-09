@@ -61,54 +61,6 @@ def _init_session():
     
     g.session['track'] = _track
 
-def _check_syntax(ws, cursor, sql):
-    sql = "SELECT * FROM ( {0} ) AS t LIMIT 0".format(sql)
-
-    try:
-        start = time.time()
-        cursor.execute(sql, async=False)
-        finish = time.time()
-        
-        # col[0][2:] : Remove 't.' prefix from column names
-        cols = [col[0][2:] for col in cursor.description]
-        ws.send(json.dumps({
-            'type' : 'syntax',
-            'data' : {
-                'columns' : cols,
-            }
-        }))
-        
-        g.session['track']({
-            't' : 'event',
-            'ec' : 'catalogs',
-            'ea' : 'syntax_ok',
-            'el' : g.session['user'].id,
-            'ev' : int(finish-start),
-        })
-
-    except hive.OperationalError as e:
-        finish = time.time()
-        status = e.args[0].status
-        prefix = "Error while compiling statement: FAILED: "
-        if status.sqlState in ['21000', '42000', '42S02']:
-            ws.send(json.dumps({
-                'type' : 'syntax',
-                'error' : {
-                    'message' : status.errorMessage[len(prefix):],
-                }
-            }))
-            
-            g.session['track']({
-                't' : 'event',
-                'ec' : 'catalogs',
-                'ea' : 'syntax_error',
-                'el' : g.session['user'].id,
-                'ev' : int(finish-start),
-            })
-        
-        else:
-            raise
-
 class QueryCancelledException(Exception):
     pass
 
@@ -242,10 +194,7 @@ def catalog(ws):
             while ws.connected:
                 msg = json.loads(msg)
                 
-                if msg['type'] == 'syntax':
-                    _check_syntax(ws, cursor, msg['data']['sql'])
-                
-                elif msg['type'] == 'query':
+                if msg['type'] == 'query':
                     _execute_query(ws, cursor, msg['data']['sql'])
                 
                 elif msg['type'] == 'ping':

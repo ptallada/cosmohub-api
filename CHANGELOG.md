@@ -17,6 +17,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fix pending file movement. (Pau Tallada)
 - Fix typo in ASDF format documentation. (Pau Tallada)
 
+### Removed
+- Remove legacy websockets syntax check call. (Pau Tallada)
+
 
 ## [2.2.3] - 2017-07-26
 ### Added
