@@ -14,6 +14,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Handle `21000` SQL error as a syntax error. (Pau Tallada)
 - Relax locking requirements for `Group` when modifying `ACL`s. (Pau Tallada)
+- Fix pending file movement. (Pau Tallada)
 
 ## [2.2.3] - 2017-07-26
 ### Added
