@@ -20,7 +20,7 @@ class CsvBz2File(BaseFormat):
     )
     row_format = textwrap.dedent(
         """\
-        ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
         STORED AS TEXTFILE
         """
     )
