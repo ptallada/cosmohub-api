@@ -81,7 +81,7 @@ def _raise_if_cancelled(ws):
 
 def _execute_query(ws, cursor, sql):
     try:
-        sql = "SELECT * FROM ( {0} ) AS t LIMIT 10001".format(sql)
+        sql = "SELECT * FROM ( {0} ) AS t".format(sql)
         start = time.time()
         cursor.execute(sql, async=True)
         
@@ -119,9 +119,9 @@ def _execute_query(ws, cursor, sql):
         finish = time.time()
         
         limited = False
-        if len(data) > 10000:
-            limited = True
-            data = data[:10000]
+        #if len(data) > 10000:
+        #    limited = True
+        #    data = data[:10000]
         
         # col[0][2:] : Remove 't.' prefix from column names
         cols = [col[0][2:] for col in cursor.description]
@@ -164,7 +164,8 @@ def _execute_query(ws, cursor, sql):
 def catalog(ws):
     with app.request_context(ws.environ):
         cursor = hive.connect(
-            current_app.config['HIVE_HOST'],
+            host=current_app.config['HIVE_HOST'],
+            port=current_app.config['HIVE_PORT'],
             username='jcarrete',
             database=current_app.config['HIVE_DATABASE']
         ).cursor()

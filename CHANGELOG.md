@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Relax locking requirements for `Group` when modifying `ACL`s. (Pau Tallada)
 - Fix pending file movement. (Pau Tallada)
 - Fix typo in ASDF format documentation. (Pau Tallada)
+- Use configured Hive port instead of default. (Pau Tallada)
 
 ### Removed
 - Remove legacy websockets syntax check call. (Pau Tallada)
