@@ -1,7 +1,9 @@
+import time
 import werkzeug.exceptions as http_exc
 
-from flask import g, current_app
+from flask import g, current_app, request
 from flask_restful import Resource, marshal
+from pyhive import hive
 from sqlalchemy.orm import (
     joinedload,
     undefer_group,
@@ -103,3 +105,65 @@ class CatalogItem(Resource):
             return data
 
 api_rest.add_resource(CatalogItem, '/catalogs/<int:id_>')
+
+class CatalogSyntaxItem(Resource):
+    decorators = [auth_required(Privilege('/user'))]
+    
+    def get(self):
+        cursor = hive.connect(
+            host=current_app.config['HIVE_HOST'],
+            port=current_app.config['HIVE_PORT'],
+            username='jcarrete',
+            database=current_app.config['HIVE_DATABASE']
+        ).cursor()
+        
+        sql = "SELECT * FROM ( {0} ) AS t LIMIT 0".format(request.args['sql'])
+        
+        try:
+            start = time.time()
+            cursor.execute(sql, async=False)
+            finish = time.time()
+            
+            # col[0][2:] : Remove 't.' prefix from column names
+            cols = [col[0][2:] for col in cursor.description]
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'catalogs',
+                'ea' : 'syntax_ok',
+                'el' : g.session['user'].id,
+                'ev' : int(finish-start),
+            })
+            
+            return {
+                'type' : 'syntax',
+                'data' : {
+                    'columns' : cols,
+                }
+            }
+    
+        except hive.OperationalError as e:
+            finish = time.time()
+            status = e.args[0].status
+            prefix = "Error while compiling statement: FAILED: "
+            
+            if status.sqlState in ['21000', '42000', '42S02']:
+                g.session['track']({
+                    't' : 'event',
+                    'ec' : 'catalogs',
+                    'ea' : 'syntax_error',
+                    'el' : g.session['user'].id,
+                    'ev' : int(finish-start),
+                })
+                
+                return {
+                    'type' : 'syntax',
+                    'error' : {
+                        'message' : status.errorMessage[len(prefix):],
+                    }
+                }
+            
+            else:
+                raise
+
+api_rest.add_resource(CatalogSyntaxItem, '/catalogs/syntax')

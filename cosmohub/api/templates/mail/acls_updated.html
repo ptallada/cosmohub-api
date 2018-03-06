@@ -1,3 +1,7 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+
 <p>Hi {{ user.name }},</p>
 
 <p>Your group membership status has been updated.
@@ -11,4 +15,4 @@ As of now, you can access the data of the following projects:</p>
 
 <p>Best regards,</p>
 
-<p>The CosmoHub team.</p>
+{% endblock content %}

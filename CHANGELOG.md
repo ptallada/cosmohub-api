@@ -6,6 +6,25 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.3.0] - 2018-02-22
+### Added
+- Add base template for HTML emails with logo and footer. (Pau Tallada)
+- Add check syntax REST endpoint. (Pau Tallada)
+
+### Changed
+- Moved old documentation. (Pau Tallada)
+
+### Fixed
+- Handle `21000` SQL error as a syntax error. (Pau Tallada)
+- Relax locking requirements for `Group` when modifying `ACL`s. (Pau Tallada)
+- Fix pending file movement. (Pau Tallada)
+- Fix typo in ASDF format documentation. (Pau Tallada)
+- Use configured Hive port instead of default. (Pau Tallada)
+
+### Removed
+- Remove legacy websockets syntax check call. (Pau Tallada)
+
+
 ## [2.2.3] - 2017-07-26
 ### Added
 - Notify superuser upon catalog failure. (Pau Tallada)

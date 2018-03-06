@@ -127,7 +127,8 @@ api_rest.add_resource(QueryCollection, '/queries')
 
 def finish_query(query, status):
     cursor=hive.connect(
-        current_app.config['HIVE_HOST'],
+        host=current_app.config['HIVE_HOST'],
+        port=current_app.config['HIVE_PORT'],
         username='jcarrete',
         database=current_app.config['HIVE_DATABASE']
     ).cursor()

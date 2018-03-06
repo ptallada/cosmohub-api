@@ -1,3 +1,7 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+
 <p>Hi {{ user.name }},</p>
 
 <p>Welcome to CosmoHub!</p>
@@ -7,5 +11,6 @@ account:</p>
 
 <p>If you did not sign up for CosmoHub, please disregard this message.</p>
 
-<p>Cheers, <br>
-The CosmoHub team.</p>
+<p>Cheers,</p>
+
+{% endblock content %}

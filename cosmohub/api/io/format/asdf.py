@@ -49,7 +49,7 @@ class AsdfFile(BaseFormat):
     
     def _initialize(self):
         """\
-        Build the CSV header from the field names
+        Build the header from the field names
         """
         columns = [
             fits.Column(name=str(c[0]), format=self._dtype[c[1]]) # @UndefinedVariable

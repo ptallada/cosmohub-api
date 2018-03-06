@@ -10,7 +10,7 @@ from flask_restful import (
 )
 from sqlalchemy import literal
 from sqlalchemy.orm import (
-    aliased,
+    attributes,
     contains_eager,
     undefer_group,
 )
@@ -102,7 +102,7 @@ class AclItem(Resource):
             ).filter(
                 model.User.id == g.session['user'].id,
                 model.Group.name.in_(attrs['groups_granted']),
-            ).with_for_update().all()
+            ).with_for_update(read=True).all()
             
             groups_revoked = session.query(
                 model.Group
@@ -111,22 +111,27 @@ class AclItem(Resource):
             ).filter(
                 model.User.id == g.session['user'].id,
                 model.Group.name.in_(attrs['groups_revoked']),
-            ).with_for_update().all()
+            ).with_for_update(read=True).all()
             
             user = session.query(
                 model.User
-            ).join(
-                model.User.acls, # @UndefinedVariable
+            ).filter(
+                model.User.id == id_
+            ).with_for_update(read=True).one()
+            
+            user_acls = session.query(
+                model.ACL
             ).join(
                 model.ACL.group
             ).filter(
-                model.User.id == id_
+                model.ACL.user_id == id_
             ).options(
                 contains_eager(
-                    model.User.acls, # @UndefinedVariable
                     model.ACL.group,
                 )
-            ).with_for_update().one()
+            ).with_for_update().all()
+            
+            attributes.set_committed_value(user, 'acls', user_acls)  # @UndefinedVariable
             
             for group in groups_granted:
                 if group not in user.acls:
