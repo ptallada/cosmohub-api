@@ -4,7 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
-
+### Fixed
+- Fixed statistics for string or multiple partitions. (Pau Tallada)
 
 ## [2.3.0] - 2018-02-22
 ### Added
