@@ -64,6 +64,24 @@ def parse_progress(report):
 def reflect_catalogs(metastore_uri, database):
     engine = create_engine(metastore_uri)
 
+    engine.execute(
+        textwrap.dedent("""\
+            CREATE OR REPLACE FUNCTION double_or_null(v_input text)
+            RETURNS DOUBLE PRECISION AS $$
+            DECLARE v_value DOUBLE PRECISION DEFAULT NULL;
+            BEGIN
+                BEGIN
+                    v_value := v_input::DOUBLE PRECISION;
+                EXCEPTION WHEN OTHERS THEN
+                    RETURN NULL;
+                END;
+            RETURN v_value;
+            END;
+            $$ LANGUAGE plpgsql;
+        """
+        )
+    )
+
     sql = textwrap.dedent("""\
     SELECT *
     FROM (
@@ -94,7 +112,7 @@ def reflect_catalogs(metastore_uri, database):
                 "TABLE_NAME",
                 "COLUMN_NAME",
                 MIN(COALESCE(ps."LONG_LOW_VALUE", ps."DOUBLE_LOW_VALUE")) AS min,
-                MIN(COALESCE(ps."LONG_HIGH_VALUE", ps."DOUBLE_HIGH_VALUE")) AS max
+                MAX(COALESCE(ps."LONG_HIGH_VALUE", ps."DOUBLE_HIGH_VALUE")) AS max
             FROM "PART_COL_STATS" as ps
             GROUP BY "DB_NAME", "TABLE_NAME", "COLUMN_NAME"
         ) AS ps
@@ -103,7 +121,7 @@ def reflect_catalogs(metastore_uri, database):
             AND ps."COLUMN_NAME" = cd."COLUMN_NAME"
         
         UNION
-
+        
         SELECT
             db."NAME" AS db_name,
             tb."TBL_NAME" AS tb_name,
@@ -112,13 +130,14 @@ def reflect_catalogs(metastore_uri, database):
             pk."PKEY_NAME" AS name,
             pk."PKEY_TYPE" AS type,
             pk."PKEY_COMMENT" AS comment,
-            MIN(CAST(pv."PART_KEY_VAL" AS double precision)) AS min,
-            MAX(CAST(pv."PART_KEY_VAL" AS double precision)) AS max
+            MIN(DOUBLE_OR_NULL(pv."PART_KEY_VAL")) AS min,
+            MAX(DOUBLE_OR_NULL(pv."PART_KEY_VAL")) AS max
         FROM "PARTITIONS" AS p
         JOIN "PARTITION_KEYS" AS pk
             ON pk."TBL_ID" = p."TBL_ID"
         JOIN "PARTITION_KEY_VALS" AS pv
             ON pv."PART_ID" = p."PART_ID"
+            AND pk."INTEGER_IDX" = pv."INTEGER_IDX"
         JOIN "TBLS" AS tb
             ON tb."TBL_ID" = p."TBL_ID"
         JOIN "DBS" AS db

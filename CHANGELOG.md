@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.3.1] - 2018-05-07
+### Fixed
+- Fixed statistics for string or multiple partitions. (Pau Tallada)
+
+
 ## [2.3.0] - 2018-02-22
 ### Added
 - Add base template for HTML emails with logo and footer. (Pau Tallada)
