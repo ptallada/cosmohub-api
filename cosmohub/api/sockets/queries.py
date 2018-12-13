@@ -46,7 +46,7 @@ def _init_session():
         payload = params.copy()
             
         if g.session['user']:
-            payload['uid'] = g.session['user'].id
+            payload['uid'] = g.session['user']['id']
             payload.update(hit)
 
         body = []
@@ -83,7 +83,7 @@ def queries(ws):
             while ws.connected:
                 with transactional_session(db.session) as session:
                     queries = session.query(model.Query).filter_by(
-                        user_id = g.session['user'].id,
+                        user_id = g.session['user']['id'],
                         status = 'PROCESSING'
                     ).order_by(
                         model.Query.ts_submitted
@@ -119,7 +119,7 @@ def queries(ws):
                         't' : 'event',
                         'ec' : 'queries',
                         'ea' : 'progress',
-                        'el' : g.session['user'].id,
+                        'el' : g.session['user']['id'],
                         'ev' : len(data),
                     })
                 

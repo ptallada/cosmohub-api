@@ -82,7 +82,10 @@ if os.environ.get('PYDEVD_HOST', None):
     
     @app.before_first_request
     def _init_pydev():
-        pydevd.settrace(host=os.environ['PYDEVD_HOST'], suspend=False)
+        pydevd.settrace(
+            host=os.environ['PYDEVD_HOST'], suspend=False,
+            stdoutToServer=True, stderrToServer=True
+        )
 
 @app.before_request
 def _init_session():
@@ -114,7 +117,7 @@ def _init_session():
         payload = params.copy()
             
         if g.session['user']:
-            payload['uid'] = g.session['user'].id
+            payload['uid'] = g.session['user']['id']
             payload.update(hit)
 
         body = []

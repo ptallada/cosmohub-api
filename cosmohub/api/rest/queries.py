@@ -29,10 +29,10 @@ class QueryCollection(Resource):
 
     def get(self):
         with transactional_session(db.session, read_only=True) as session:
-            queries = session.query(model.Query).join(
-                'user'
-            ).filter(
-                model.User.id == g.session['user'].id,
+            queries = session.query(
+                model.Query
+            ).filter_by(
+                user_id = g.session['user']['id'],
             ).all()
             
             data = marshal(queries, fields.Query)
@@ -67,7 +67,7 @@ class QueryCollection(Resource):
             try:
                 with transactional_session(db.session) as session:
                     user = session.query(model.User).filter_by(
-                        id=g.session['user'].id
+                        id=g.session['user']['id']
                     ).one()
                     
                     query = model.Query(

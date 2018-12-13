@@ -1,3 +1,4 @@
+import ldap3
 import logging
 import urllib
 import urlparse
@@ -46,36 +47,51 @@ log = logging.getLogger(__name__)
 class UserItem(Resource):
     @auth_required(Privilege('/user'))
     def get(self):
-        with transactional_session(db.session, read_only=True) as session:
-            groups = session.query(
-                model.Group
-            ).options(
-                undefer_group('text'),
-            ).all()
+        
+        with ldap3.Connection(
+            server = current_app.config['LDAP_HOST'],
+            user = current_app.config['LDAP_BIND_USER'],
+            password = current_app.config['LDAP_BIND_PASSWORD'],
+            auto_bind=ldap3.AUTO_BIND_TLS_BEFORE_BIND,
+            read_only = True,
+            raise_exceptions = True,
+        ) as conn:
+            user_reader = ldap3.Reader(
+                conn,
+                ldap3.ObjectDef(['posixAccount'], conn),
+                base=current_app.config['LDAP_BASE_USER'],
+                query='uidNumber: {0}'.format(g.session['user']['id']),
+                get_operational_attributes=True
+            )
+            user_reader.search()
+            #FIXME: maybe user does not exist
+            user = marshal(user_reader.entries[0], fields.User)
             
-            user = session.query(
-                model.User
-            ).options(
-                joinedload('acls'),
-            ).filter_by(
-                id=g.session['user'].id
-            ).one()
+            group_reader = ldap3.Reader(
+                conn,
+                ldap3.ObjectDef(['posixGroup'], conn),
+                base=current_app.config['LDAP_BASE_GROUP'],
+                query='memberUid: {0}'.format(user_reader.entries[0].uid.value),
+                get_operational_attributes=True
+            )
             
-            user.groups = []
-            for group in groups:
+            group_reader.search()
+            
+            user['groups'] = []
+            for group in group_reader.entries:
                 data = marshal(group, fields.Group)
-                if group in user.acls:
-                    data.update(marshal(user.acls[group], fields.ACL))
-                user.groups.append(data)
+                data['is_granted'] = True
+                data['is_admin'] = False #FIXME: read from adminUid
+                user['groups'].append(data)
             
             g.session['track']({
                 't' : 'event',
                 'ec' : 'user',
                 'ea' : 'details',
-                'el' : user.id,
+                'el' : user['id'],
             })
             
-            return marshal(user, fields.User)
+            return user
     
     @auth_required( Privilege('/user') | Privilege('/password_reset') )
     def patch(self):
@@ -91,7 +107,7 @@ class UserItem(Resource):
             user = session.query(
                 model.User
             ).filter_by(
-                id=g.session['user'].id
+                id=g.session['user']['id']
             ).with_for_update().one()
             
             privilege = Privilege('/user')
@@ -280,7 +296,7 @@ class UserItem(Resource):
                     'el' : user.id,
                 })
         
-        delete_user(g.session['user'].id)
+        delete_user(g.session['user']['id'])
 
         return '', 204
 
@@ -291,7 +307,7 @@ class UserEmailConfirm(Resource):
     def get(self):
         with transactional_session(db.session) as session:
             user = session.query(model.User).filter_by(
-                id=g.session['user'].id
+                id=g.session['user']['id']
             ).with_for_update().one()
             
             privilege = Privilege('/email_confirm/{0}'.format(adler32(user.email)))

@@ -31,6 +31,16 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 DOWNLOADS_BASE_DIR = ''
 RESULTS_BASE_DIR = 'cosmohub_results' # Relative to ~
 
+# LDAP settings
+LDAP_HOST = 'ldap://ldap.example.com'
+LDAP_BIND_USER = 'cn=authenticate,ou=System,dc=example,dc=com'
+LDAP_BIND_PASSWORD = 'secret'
+LDAP_ADMIN_USER = 'cn=admin,ou=Administrators,dc=example,dc=com'
+LDAP_ADMIN_PASSWORD = 'secret'
+LDAP_BASE_USER = 'ou=People,dc=example,dc=com'
+LDAP_BASE_GROUP = 'ou=Group,dc=example,dc=com'
+LDAP_UIDNEXT_DN = 'cn=uidNext,ou=People,dc=example,dc=com'
+
 # 64-byte (128 hex-chars) secret key for signing tokens and cookies
 # Change this to invalidate all sessions and tokens
 SECRET_KEY = binascii.unhexlify(

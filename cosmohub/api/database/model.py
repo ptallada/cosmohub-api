@@ -10,6 +10,7 @@ from sqlalchemy import (
     event,
 )
 from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     backref,
@@ -40,7 +41,7 @@ from sqlalchemy_utils import (
 
 from .schema import Column
 
-from cosmohub.api import db
+from cosmohub.api import db  # @UnresolvedImport
 
 # Required for PasswordType
 force_auto_coercion()
@@ -387,12 +388,6 @@ class GroupCatalog(db.Model):
         ),
         # Foreign keys
         ForeignKeyConstraint(
-            ['group_id'],
-            ['group.id'],
-            onupdate='CASCADE',
-            ondelete='CASCADE'
-        ),
-        ForeignKeyConstraint(
             ['catalog_id'],
             ['catalog.id'],
             onupdate='CASCADE',
@@ -535,16 +530,17 @@ class Catalog(db.Model):
     )
 
     # Relationships
-    groups = relationship(
-        'Group',
-        secondary=lambda: GroupCatalog.__table__,
-        collection_class=set,
+    group_catalogs = relationship(
+        'GroupCatalog',
         backref=backref(
-            'catalogs',
+            'catalog',
+            uselist=True,
             collection_class=set,
-            passive_deletes=True
-        )
+        ),
+        collection_class=set,
+        passive_deletes=True,
     )
+    
     files = relationship(
         'File',
         secondary=lambda: VAD.__table__,
@@ -555,6 +551,8 @@ class Catalog(db.Model):
             passive_deletes=True
         )
     )
+    
+    group_ids = association_proxy('group_catalogs', '_group_id')
 
     @hybrid_property
     def id(self):
@@ -686,13 +684,6 @@ class Query(db.Model):
             'status',
             'ts_submitted'
         ),
-        # Foreign keys
-        ForeignKeyConstraint(
-            ['user_id'],
-            ['user.id'],
-            onupdate='CASCADE',
-            ondelete='CASCADE'
-        ),
     )
 
     class Status(enum.Enum):
@@ -786,15 +777,6 @@ class Query(db.Model):
         DateTime,
         nullable=True,
         comment='When this Query execution finished'
-    )
-
-    # Relationships
-    user = relationship('User',
-        backref=backref(
-            'queries',
-            collection_class=set,
-            passive_deletes=True
-        )
     )
 
     @hybrid_property

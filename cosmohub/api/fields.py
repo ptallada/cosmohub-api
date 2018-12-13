@@ -1,14 +1,14 @@
 from flask_restful import fields
 
 User = {
-    'id'                 : fields.Integer,
-    'name'               : fields.String,
-    'email'              : fields.String,
-    'is_superuser'       : fields.Boolean,
-    'groups'             : fields.Raw,
-    'ts_created'         : fields.DateTime('iso8601'),
-    'ts_email_confirmed' : fields.DateTime('iso8601'),
-    'ts_last_login'      : fields.DateTime('iso8601'),
+    'id'                 : fields.Integer(attribute='uidNumber.value'),
+    'name'               : fields.String(attribute='cn.value'),
+    'email'              : fields.String(attribute='gecos.value'),
+    #'is_superuser'       : fields.Boolean(default=False),
+    #'groups'             : fields.Raw,
+    'ts_created'         : fields.DateTime('iso8601', attribute='OA_createTimestamp.value'),
+    'ts_email_confirmed' : fields.DateTime('iso8601', attribute='OA_createTimestamp.value'), # FIXME
+    'ts_last_login'      : fields.DateTime('iso8601', attribute='OA_authTimestamp.value'),
 }
 
 CatalogCollection = {
@@ -65,22 +65,23 @@ Query = {
 }
 
 UserToken = {
-    'id'    : fields.Integer,
-    'name'  : fields.String,
-    'email' : fields.String,
+    'id'    : fields.Integer(attribute='uidNumber.value'),
+    'uid'   : fields.String(attribute='uid.value'),
+    'name'  : fields.String(attribute='cn.value'),
+    'email' : fields.String(attribute='gecos.value'),
 }
 
 Group = {
-    'id'          : fields.Integer,
-    'name'        : fields.String,
-    'description' : fields.String,
-    'is_private'  : fields.Boolean,
-    'ts_created'  : fields.DateTime('iso8601'),
+    'id'          : fields.Integer(attribute='gidNumber.value'),
+    'name'        : fields.String(attribute='cn.value'),
+    'description' : fields.String(attribute='description.value'),
+    #'is_private'  : fields.Boolean(attribute='uidNumber.value'),
+    'ts_created'  : fields.DateTime('iso8601', attribute='OA_createTimestamp.value'), 
 }
 
-ACL = {
-    'ts_requested' : fields.DateTime('iso8601'),
-    'is_granted'   : fields.Boolean,
-    'is_admin'     : fields.Boolean,
-    'ts_resolved'  : fields.DateTime('iso8601'),
-}
+#ACL = {
+#    'ts_requested' : fields.DateTime('iso8601'),
+#    'is_granted'   : fields.Boolean,
+#    'is_admin'     : fields.Boolean,
+#    'ts_resolved'  : fields.DateTime('iso8601'),
+#}

@@ -40,7 +40,7 @@ class Token(object):
         
         token = {
             'exp' : exp,
-            'user' : marshal(self._user, fields.UserToken),
+            'user' : self._user,
             'privilege' : self._privilege.attr,
         }
         

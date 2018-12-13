@@ -5,6 +5,7 @@ from flask import g, current_app, request
 from flask_restful import Resource, marshal
 from pyhive import hive
 from sqlalchemy.orm import (
+    contains_eager,
     joinedload,
     undefer_group,
 )
@@ -26,10 +27,12 @@ class CatalogCollection(Resource):
                 is_public = True
             )
 
-            restricted = session.query(model.Catalog).join(
-                'groups', 'users_allowed'
+            restricted = session.query(
+                model.Catalog
+            ).join(
+                model.GroupCatalog
             ).filter(
-                model.User.id == g.session['user'].id
+                model.GroupCatalog._group_id.in_(g.session['user']['groups'])
             )
 
             catalogs = public.union(restricted).all()
@@ -50,23 +53,21 @@ class CatalogItem(Resource):
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
-            catalog = session.query(model.Catalog).filter_by(
+            catalog = session.query(
+                model.Catalog
+            ).filter_by(
                 id = id_
+            ).join(
+                'group_catalogs',
             ).options(
+                contains_eager('group_catalogs'),
                 joinedload('datasets'),
                 joinedload('files'),
                 undefer_group('text'),
             ).one()
 
             if not catalog.is_public:
-                user = session.query(model.User).join(
-                    'groups_granted', 'catalogs'
-                ).filter(
-                    model.Catalog.id == id_,
-                    model.User.id == g.session['user'].id,
-                ).first()
-
-                if not user:
+                if not catalog.group_ids.intersection(g.session['user']['groups']):
                     raise http_exc.Forbidden
 
             columns = current_app.columns.loc[catalog.relation].to_dict('records')
@@ -131,7 +132,7 @@ class CatalogSyntaxItem(Resource):
                 't' : 'event',
                 'ec' : 'catalogs',
                 'ea' : 'syntax_ok',
-                'el' : g.session['user'].id,
+                'el' : g.session['user']['id'],
                 'ev' : int(finish-start),
             })
             
@@ -152,7 +153,7 @@ class CatalogSyntaxItem(Resource):
                     't' : 'event',
                     'ec' : 'catalogs',
                     'ea' : 'syntax_error',
-                    'el' : g.session['user'].id,
+                    'el' : g.session['user']['id'],
                     'ev' : int(finish-start),
                 })
                 

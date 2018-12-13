@@ -55,7 +55,7 @@ class AclCollection(Resource):
             groups = session.query(model.Group).join(
                 model.Group.users_admins, # @UndefinedVariable
             ).filter(
-                model.User.id == g.session['user'].id
+                model.User.id == g.session['user']['id']
             ).options(
                 undefer_group('text')
             ).all()
@@ -100,7 +100,7 @@ class AclItem(Resource):
             ).join(
                 model.Group.users_admins, # @UndefinedVariable
             ).filter(
-                model.User.id == g.session['user'].id,
+                model.User.id == g.session['user']['id'],
                 model.Group.name.in_(attrs['groups_granted']),
             ).with_for_update(read=True).all()
             
@@ -109,7 +109,7 @@ class AclItem(Resource):
             ).join(
                 model.Group.users_admins, # @UndefinedVariable
             ).filter(
-                model.User.id == g.session['user'].id,
+                model.User.id == g.session['user']['id'],
                 model.Group.name.in_(attrs['groups_revoked']),
             ).with_for_update(read=True).all()
             

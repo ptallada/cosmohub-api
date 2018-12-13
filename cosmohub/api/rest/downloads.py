@@ -8,7 +8,7 @@ from datetime import timedelta
 from flask import g, current_app, request, Response, render_template_string
 from flask_restful import Resource
 from pyhdfs import HdfsClient
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, contains_eager
 from werkzeug.datastructures import Headers
 from werkzeug.http import parse_range_header
 
@@ -120,21 +120,20 @@ class DatasetReadmeDownload(BaseDownload, Resource):
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
-            dataset = session.query(model.Dataset).options(
-                joinedload('catalog')
+            dataset = session.query(
+                model.Dataset
             ).filter_by(
                 id=id_
+            ).join(
+                'catalog',
+                'group_catalogs',
+            ).options(
+                contains_eager('catalog'),
+                contains_eager('catalog.group_catalogs')
             ).one()
 
             if not dataset.catalog.is_public:
-                user = session.query(model.Dataset).join(
-                    'catalog', 'groups', 'users_allowed'
-                ).filter(
-                    model.Dataset.id == id_,
-                    model.User.id == g.session['user'].id,
-                ).first()
-
-                if not user:
+                if not dataset.catalog.group_ids.intersection(g.session['user']['groups']):
                     priv = Privilege('/download/dataset/{0}'.format(dataset['id']))
                     
                     if not priv.can(g.session['privilege']):
@@ -172,14 +171,14 @@ class FileResource(Resource):
             ).first()
 
             if not is_public:
-                user = session.query(model.User).join(
-                    'groups_granted', 'catalogs', 'files'
+                catalog = session.query(model.GroupCatalog).join(
+                    'catalog', 'files'
                 ).filter(
                     model.File.id == id_,
-                    model.User.id == g.session['user'].id,
+                    model.GroupCatalog._group_id.in_(g.session['user']['groups'])
                 ).first()
 
-                if not user:
+                if not catalog:
                     priv = Privilege('/download/file/{0}'.format(file_['id']))
                     
                     if not priv.can(g.session['privilege']):
@@ -235,22 +234,16 @@ class QueryDownload(BaseDownload, Resource):
 
     def get(self, id_):
         with transactional_session(db.session, read_only=True) as session:
-            query = session.query(model.Query).filter_by(
+            query = session.query(
+                model.Query
+            ).filter_by(
                 id=id_
             ).one()
 
             if model.Query.Status(query.status) != model.Query.Status.SUCCEEDED:
                 raise http_exc.UnprocessableEntity('The requested query is query is not succeeded.')
 
-            user = session.query(model.User).join(
-                'queries'
-            ).filter(
-                model.Query.id == id_,
-                model.User.id == g.session['user'].id,
-                
-            ).first()
-
-            if not user:
+            if query.user_id != g.session['user']['id']:
                 raise http_exc.Forbidden
             
             priv = Privilege('/user') | Privilege('/download/query/{0}'.format(id_))

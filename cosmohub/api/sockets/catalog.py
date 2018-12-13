@@ -47,7 +47,7 @@ def _init_session():
         payload = params.copy()
             
         if g.session['user']:
-            payload['uid'] = g.session['user'].id
+            payload['uid'] = g.session['user']['id']
             payload.update(hit)
 
         body = []
@@ -144,7 +144,7 @@ def _execute_query(ws, cursor, sql):
             't' : 'event',
             'ec' : 'catalogs',
             'ea' : 'query_completed',
-            'el' : g.session['user'].id,
+            'el' : g.session['user']['id'],
             'ev' : int(finish-start),
         })
 
@@ -156,7 +156,7 @@ def _execute_query(ws, cursor, sql):
             't' : 'event',
             'ec' : 'catalogs',
             'ea' : 'query_cancelled',
-            'el' : g.session['user'].id,
+            'el' : g.session['user']['id'],
             'ev' : int(finish-start),
         })
 
@@ -199,9 +199,8 @@ def catalog(ws):
                     _execute_query(ws, cursor, msg['data']['sql'])
                 
                 elif msg['type'] == 'ping':
-                    ws.send(json.dumps({
-                        'type' : 'pong',
-                    }))
+                    # FIXME: remove
+                    pass
                 
                 else:
                     break
