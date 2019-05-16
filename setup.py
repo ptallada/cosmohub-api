@@ -45,7 +45,7 @@ setup(
         'pandas',
         'passlib',
         'psycogreen',
-        'psycopg2',
+        'psycopg2-binary',
         'pyhive[hive]',
         'pyhdfs',
         'pyparsing',

@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Changed
 - Update `pyhive` dependency to upstream. (Pau Tallada)
+- Replace `psycopg2` dependency for `psycopg2-binary`. (Pau Tallada)
 
 
 ## [2.3.1] - 2018-05-07
