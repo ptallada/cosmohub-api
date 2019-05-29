@@ -1,3 +1,8 @@
+import os
+if os.environ.get('PYDEVD_HOST', None):
+    os.environ["GEVENT_SUPPORT"] = "True"
+    import pydevd
+
 from gevent.monkey import patch_all
 patch_all()
 from psycogreen.gevent import patch_psycopg
@@ -5,7 +10,6 @@ patch_psycopg()
 
 import gevent
 import logging
-import os
 import requests
 
 from flask import g, Flask, Blueprint, jsonify, request
@@ -74,11 +78,12 @@ app.formats = {
 app.jwt = TimedJSONWebSignatureSerializer(app.config['SECRET_KEY'])
 
 if os.environ.get('PYDEVD_HOST', None):
-    import pydevd
-    
     @app.before_first_request
     def _init_pydev():
-        pydevd.settrace(host=os.environ['PYDEVD_HOST'], suspend=False)
+        pydevd.settrace(
+            host=os.environ['PYDEVD_HOST'], suspend=False,
+            stdoutToServer=True, stderrToServer=True
+        )
 
 @app.before_request
 def _init_session():
