@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Removed
+- Remove Opbeat component. (Pau Tallada)
 
 
 ## [2.3.2] - 2019-11-18

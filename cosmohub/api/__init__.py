@@ -17,7 +17,6 @@ from flask_sqlalchemy import SQLAlchemy, Model as FlaskModel
 from flask_uwsgi_websocket import WebSocket
 from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer
-from opbeat.contrib.flask import Opbeat
 from pkg_resources import iter_entry_points # @UnresolvedImport
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext import declarative
@@ -46,9 +45,6 @@ mail = Mail(app)
 
 # Configure ReCaptcha service
 recaptcha = ReCaptcha(app)
-
-# Configure OpBeat service
-opbeat = Opbeat(app)
 
 # Configure SQLAlchemy extension
 metadata = db_schema.MetaData()

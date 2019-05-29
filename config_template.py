@@ -104,12 +104,6 @@ QUERY_COMMENTS = textwrap.dedent(u"""\
     """
 )
 
-OPBEAT = {
-    'ORGANIZATION_ID': '',
-    'APP_ID': '',
-    'SECRET_TOKEN': '',
-}
-
 # Google Analytics
 GA_URL = 'https://www.google-analytics.com/collect'
 GA_TRACKING_ID = ''
