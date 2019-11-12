@@ -7,7 +7,7 @@ import urlparse
 from datetime import datetime, timedelta
 from flask import g, current_app, render_template, render_template_string
 from flask_restful import Resource, marshal, reqparse
-from pyhdfs import HdfsClient
+from hdfs.ext.kerberos import KerberosClient
 from pyhive import hive
 from sqlalchemy.orm import undefer_group
 from werkzeug import exceptions as http_exc 
@@ -20,7 +20,7 @@ from ..database import model
 from ..database.session import transactional_session, retry_on_serializable_error
 from ..hadoop.hdfs import HDFSPathReader
 from ..security import auth_required, Privilege, Token
-from ..hadoop import webhcat
+from ..hadoop import oozie
 
 log = logging.getLogger(__name__)
 
@@ -58,10 +58,9 @@ class QueryCollection(Resource):
     def post(self):
         @retry_on_serializable_error
         def post_query(sql, format_):
-            hive_rest = webhcat.Hive(
-                url = current_app.config['WEBHCAT_BASE_URL'],
-                username = 'jcarrete',
-                database = current_app.config['HIVE_DATABASE']
+            oozie_rest = oozie.Oozie(
+                current_app.config['OOZIE_URL'],
+                database = current_app.config['HIVE_DATABASE'],
             )
             
             try:
@@ -87,10 +86,11 @@ class QueryCollection(Resource):
                         api_rest.url_for(QueryDone, id_=query.id, _external=True)
                     )._replace(
                         scheme='http',
-                        netloc=current_app.config['WEBHCAT_CALLBACK_NETLOC']
+                        netloc=current_app.config['WEBHCAT_CALLBACK_NETLOC'],
+                        query='status=$status',
                     ).geturl()
                     
-                    query.job_id = hive_rest.submit(
+                    query.job_id = oozie_rest.submit(
                         query = sql,
                         path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id)),
                         format_ = format_,
@@ -109,7 +109,7 @@ class QueryCollection(Resource):
             except:
                 try:
                     if query and query.job_id:
-                        hive_rest.cancel(query.job_id)
+                        oozie_rest.cancel(query.job_id)
                 except:
                     pass
                 finally:
@@ -129,28 +129,20 @@ def finish_query(query, status):
     cursor=hive.connect(
         host=current_app.config['HIVE_HOST'],
         port=current_app.config['HIVE_PORT'],
-        username='jcarrete',
-        database=current_app.config['HIVE_DATABASE']
+        database=current_app.config['HIVE_DATABASE'],
+        auth='KERBEROS',
+        kerberos_service_name='hive',
     ).cursor()
     
-    client=HdfsClient(
-        hosts=current_app.config['HADOOP_NAMENODES'],
-        user_name='jcarrete'
-    )
     
-    if not model.Query.Status[status['status']['state']].is_final():
-        return
+    query.status = model.Query.Status[status['status']].value
     
     # Update query columns upon completion
-    query.status = model.Query.Status[status['status']['state']].value
-    
-    query.ts_started = datetime.utcfromtimestamp(status['status']['startTime']/1000.)
-    query.ts_finished = datetime.utcfromtimestamp(status['status']['finishTime']/1000.)
-    exit_code = status['exitValue']
-    
-    if exit_code and int(exit_code) != 0:
-        query.status = model.Query.Status.FAILED.value # @UndefinedVariable
-        return
+    if status['startTime']:
+        query.ts_started = datetime.strptime(status['startTime'], '%a, %d %b %Y %H:%M:%S %Z')
+    else:
+        query.ts_started = datetime.strptime(status['createdTime'], '%a, %d %b %Y %H:%M:%S %Z')
+    query.ts_finished = datetime.strptime(status['endTime'], '%a, %d %b %Y %H:%M:%S %Z')
     
     if query.status != model.Query.Status.SUCCEEDED.value: # @UndefinedVariable
         return
@@ -162,6 +154,12 @@ def finish_query(query, status):
         [f[0][2:], f[1], f[2], f[3], f[4], f[5], f[6]]
         for f in cursor.description
     ]
+    
+    url = ';'.join(['http://'+e for e in current_app.config['HADOOP_NAMENODES']])
+    client=KerberosClient(
+        url=url,
+        mutual_auth='OPTIONAL',
+    )
     
     path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id))
     if not path.startswith('/'):
@@ -184,10 +182,9 @@ class QueryCancel(Resource):
     decorators = [auth_required(Privilege('/user'))]
 
     def post(self, id_):
-        hive_rest=webhcat.Hive(
-            url=current_app.config['WEBHCAT_BASE_URL'],
-            username='jcarrete',
-            database=current_app.config['HIVE_DATABASE']
+        oozie_rest=oozie.Oozie(
+            current_app.config['OOZIE_URL'],
+            database=current_app.config['HIVE_DATABASE'],
         )
         @retry_on_serializable_error
         def cancel_query(id_):
@@ -196,10 +193,10 @@ class QueryCancel(Resource):
                     id=id_,
                 ).options(
                     undefer_group('text'),
-                ).one()
+                ).with_for_update().one()
                 
-                status = hive_rest.cancel(query.job_id)
-                
+                oozie_rest.cancel(query.job_id)
+                status = oozie_rest.status(query.job_id)
                 finish_query(query, status)
                 
                 g.session['track']({
@@ -216,10 +213,9 @@ api_rest.add_resource(QueryCancel, '/queries/<int:id_>/cancel')
 
 class QueryDone(Resource):
     def get(self, id_):
-        hive_rest=webhcat.Hive(
-            url=current_app.config['WEBHCAT_BASE_URL'],
-            username='jcarrete',
-            database=current_app.config['HIVE_DATABASE']
+        oozie_rest = oozie.Oozie(
+            current_app.config['OOZIE_URL'],
+            database=current_app.config['HIVE_DATABASE'],
         )
         
         with transactional_session(db.session) as session:
@@ -234,7 +230,10 @@ class QueryDone(Resource):
             if model.Query.Status(query.status).is_final():
                 return
             
-            status = hive_rest.status(query.job_id)
+            status = oozie_rest.status(query.job_id)
+            
+            if not model.Query.Status[status['status']].is_final():
+                return
             
             finish_query(query, status)
             
@@ -253,12 +252,12 @@ class QueryDone(Resource):
                         body = render_template(
                             'mail/query_failed.txt',
                             query=query,
-                            exit_code=status['exitValue']
+                            exit_code=1
                         ),
                         html = render_template(
                             'mail/query_failed.html',
                             query=query,
-                            exit_code=status['exitValue']
+                            exit_code=1
                         ),
                     )
                 
@@ -294,4 +293,4 @@ class QueryDone(Resource):
                 'ev' : int((query.ts_finished - query.ts_started).total_seconds())
             })
 
-api_rest.add_resource(QueryDone, '/queries/<int:id_>/done')
+api_rest.add_resource(QueryDone, '/queries/<int:id_>')

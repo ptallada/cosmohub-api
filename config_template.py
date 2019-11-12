@@ -1,5 +1,6 @@
 import binascii
 import os
+import sys
 import textwrap
 
 # Statement for enabling the development environment
@@ -29,7 +30,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # HDFS paths
 DOWNLOADS_BASE_DIR = ''
-RESULTS_BASE_DIR = 'cosmohub_results' # Relative to ~
+RESULTS_BASE_DIR = '/user/cosmohub/cosmohub_results'
 
 # 64-byte (128 hex-chars) secret key for signing tokens and cookies
 # Change this to invalidate all sessions and tokens
@@ -39,9 +40,9 @@ SECRET_KEY = binascii.unhexlify(
 )
 # Token expiration in seconds
 TOKEN_EXPIRES_IN = {
-    'email_confirm'  : float('+inf'),
+    'email_confirm'  : sys.maxint,
     'password_reset' : 2*24*60*60,
-    'download'       : float('+inf'),
+    'download'       : sys.maxint,
 }
 TOKEN_EXPIRES_IN_DEFAULT = 1*60*60
 
@@ -107,3 +108,14 @@ QUERY_COMMENTS = textwrap.dedent(u"""\
 # Google Analytics
 GA_URL = 'https://www.google-analytics.com/collect'
 GA_TRACKING_ID = ''
+
+# Oozie settings
+OOZIE_URL = 'http://example.com:11000/oozie/'
+OOZIE_WF_PATH = '/apps/cosmohub/oozie/custom_catalog'
+HDFS_URL = 'hdfs://default'
+JOB_TRACKER = 'yarn-cluster'
+JDBC_URL = 'jdbc:hive2://host1.example.com:2181,host2.example.com:2181,host3.example.com:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2'
+JDBC_PRINCIPAL = 'hive/_HOST@EXAMPLE.COM'
+
+# Impersonation settings
+DO_AS = 'user'

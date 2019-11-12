@@ -39,7 +39,7 @@ class HDFSPathReader(io.RawIOBase):
         self._position = 0
         self._all_files = collections.deque()
 
-        status = self._client.get_file_status(self._path)
+        status = self._client.status(self._path)
         if status['type'] == 'FILE' and status['length']>0:
             self._all_files.append({
                 'name': os.path.basename(self._path),
@@ -50,7 +50,7 @@ class HDFSPathReader(io.RawIOBase):
             self._length += status['length']
 
         else:
-            for entry in self._client.list_status(self._path):
+            for _, entry in self._client.list(self._path, status=True):
                 if entry['type'] != 'FILE' or entry['length']==0:
                     continue
                 self._all_files.append({
@@ -77,7 +77,7 @@ class HDFSPathReader(io.RawIOBase):
         file_path = os.path.join(self._path, entry['name'])
         length = min(len(b), entry['length'] - entry['offset'])
         
-        with self._client.open(file_path, offset=entry['offset'], length=length, buffersize=len(b)) as fd:
+        with self._client.read(file_path, offset=entry['offset'], length=length, buffer_size=len(b)) as fd:
             chunk = fd.read(len(b))
         
         # Put back the file to the pool if there is still unread data in it

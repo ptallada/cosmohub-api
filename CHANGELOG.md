@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Changed
+- Adapt to HDP 3.1 services and APIs. (Pau Tallada)
 
 
 ## [2.4.0] - 2020-04-02

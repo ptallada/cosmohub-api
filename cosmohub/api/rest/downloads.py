@@ -7,7 +7,7 @@ import werkzeug.exceptions as http_exc
 from datetime import timedelta
 from flask import g, current_app, request, Response, render_template_string
 from flask_restful import Resource
-from pyhdfs import HdfsClient
+from hdfs.ext.kerberos import KerberosClient
 from sqlalchemy.orm import joinedload
 from werkzeug.datastructures import Headers
 from werkzeug.http import parse_range_header
@@ -66,9 +66,10 @@ class BaseDownload(object):
         raise NotImplementedError
 
     def _create_client(self):
-        client = HdfsClient(
-            hosts = current_app.config['HADOOP_NAMENODES'],
-            user_name='jcarrete'
+        url = ';'.join(['http://'+e for e in current_app.config['HADOOP_NAMENODES']])
+        client = KerberosClient(
+            url=url,
+            mutual_auth='OPTIONAL',
         )
         return client
 
@@ -260,9 +261,6 @@ class QueryDownload(BaseDownload, Resource):
             range_header = request.headers.get('Range', None)
             client = self._create_client()
             path = self._get_path(query)
-            if not path.startswith('/'):
-                path = os.path.join(client.get_home_directory(), path)
-                
             reader = HDFSPathReader(client, path)
             
             context = {
