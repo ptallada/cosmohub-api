@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Gracefully handle when query progress cannot be parsed. (Pau Tallada)
+- Reapply 10k row limit for interactive queries. (Pau Tallada)
 
 
 ## [2.3.1] - 2018-05-07
