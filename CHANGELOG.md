@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.3.2] - 2019-11-18
+### Changed
+- Update `pyhive` dependency to upstream. (Pau Tallada)
+- Replace `psycopg2` dependency for `psycopg2-binary`. (Pau Tallada)
+
+### Fixed
+- Gracefully handle when query progress cannot be parsed. (Pau Tallada)
+- Reapply 10k row limit for interactive queries. (Pau Tallada)
+
+
 ## [2.3.1] - 2018-05-07
 ### Fixed
 - Fixed statistics for string or multiple partitions. (Pau Tallada)

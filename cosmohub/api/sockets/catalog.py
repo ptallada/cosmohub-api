@@ -81,7 +81,7 @@ def _raise_if_cancelled(ws):
 
 def _execute_query(ws, cursor, sql):
     try:
-        sql = "SELECT * FROM ( {0} ) AS t".format(sql)
+        sql = "SELECT * FROM ( {0} ) AS t LIMIT 10001".format(sql)
         start = time.time()
         cursor.execute(sql, async=True)
         
@@ -97,13 +97,18 @@ def _execute_query(ws, cursor, sql):
         ]):
             _raise_if_cancelled(ws)
             
-            progress = parse_progress(status.progressUpdateResponse)
-            ws.send(json.dumps({
-                'type' : 'progress',
-                'data' : {
-                    'progress' : progress,
-                }
-            }))
+            try:
+                progress = parse_progress(status.progressUpdateResponse)
+            except ValueError:
+                log.warning("Cannot parse progress report: %s", status.progressUpdateResponse)
+            else:
+                ws.send(json.dumps({
+                    'type' : 'progress',
+                    'data' : {
+                        'progress' : progress,
+                    }
+                }))
+            
             
             status = cursor.poll(True)
 
@@ -119,9 +124,9 @@ def _execute_query(ws, cursor, sql):
         finish = time.time()
         
         limited = False
-        #if len(data) > 10000:
-        #    limited = True
-        #    data = data[:10000]
+        if len(data) > 10000:
+            limited = True
+            data = data[:10000]
         
         # col[0][2:] : Remove 't.' prefix from column names
         cols = [col[0][2:] for col in cursor.description]
