@@ -8,6 +8,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Update `pyhive` dependency to upstream. (Pau Tallada)
 - Replace `psycopg2` dependency for `psycopg2-binary`. (Pau Tallada)
 
+### Fixed
+- Gracefully handle when query progress cannot be parsed. (Pau Tallada)
+
 
 ## [2.3.1] - 2018-05-07
 ### Fixed

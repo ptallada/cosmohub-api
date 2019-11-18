@@ -97,13 +97,18 @@ def _execute_query(ws, cursor, sql):
         ]):
             _raise_if_cancelled(ws)
             
-            progress = parse_progress(status.progressUpdateResponse)
-            ws.send(json.dumps({
-                'type' : 'progress',
-                'data' : {
-                    'progress' : progress,
-                }
-            }))
+            try:
+                progress = parse_progress(status.progressUpdateResponse)
+            except ValueError:
+                log.warning("Cannot parse progress report: %s", status.progressUpdateResponse)
+            else:
+                ws.send(json.dumps({
+                    'type' : 'progress',
+                    'data' : {
+                        'progress' : progress,
+                    }
+                }))
+            
             
             status = cursor.poll(True)
 
