@@ -1,5 +1,6 @@
 The catalog request (#{{ query.id }}) has not finished successfully.
 
+ - user: {{ query.user.id }} - {{ query.user.name }} <{{ query.user.email }}>
  - query: {{ query.sql }}
  - job_id: {{  query.job_id }}
  - status: {{ query.status }}
