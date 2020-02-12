@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Changed
+- Add user info to failed query email template. (Pau Tallada)
+
 ### Fixed
 - Fix gevent and websockets debugging. (Pau Tallada)
 

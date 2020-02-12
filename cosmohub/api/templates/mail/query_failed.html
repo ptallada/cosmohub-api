@@ -1,6 +1,7 @@
 <p>The catalog request (#{{ query.id }}) has not finished successfully.</p>
 
 <ul>
+<li>user: {{ query.user.id }} - {{ query.user.name }} &lt;{{ query.user.email }}&gt;
 <li>query: {{ query.sql }}</li>
 <li>job_id: {{  query.job_id }}</li>
 <li>status: {{ query.status }}</li>
