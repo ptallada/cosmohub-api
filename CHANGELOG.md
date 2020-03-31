@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Assert table access privileges at syntax check using statement AST. (Pau Tallada)
 
 
 ## [2.3.3] - 2020-02-12
