@@ -1,9 +1,11 @@
+import logging
 import time
 import werkzeug.exceptions as http_exc
 
 from flask import g, current_app, request
 from flask_restful import Resource, marshal
 from pyhive import hive
+from sqlalchemy.sql import func
 from sqlalchemy.orm import (
     joinedload,
     undefer_group,
@@ -16,6 +18,9 @@ from .. import fields
 from ..database import model
 from ..database.session import transactional_session
 from ..security import auth_required, Privilege, Token
+
+log = logging.getLogger(__name__)
+
 
 class CatalogCollection(Resource):
     decorators = [auth_required(Privilege('/user'))]
@@ -106,6 +111,11 @@ class CatalogItem(Resource):
 
 api_rest.add_resource(CatalogItem, '/catalogs/<int:id_>')
 
+
+class PermissionDenied(Exception):
+    pass
+
+
 class CatalogSyntaxItem(Resource):
     decorators = [auth_required(Privilege('/user'))]
     
@@ -121,7 +131,53 @@ class CatalogSyntaxItem(Resource):
         
         try:
             start = time.time()
+            
+            explain = "EXPLAIN EXTENDED {0}".format(sql)
+            cursor.execute(explain, async=False)
+            ast = [row[0].strip() for row in cursor.fetchall()]
+            prefix = current_app.config['HIVE_DATABASE'] + '.'
+            tables = [
+                ast[i+1][len(prefix):] if ast[i+1].startswith(prefix) else ast[i+1]
+                for i,x in enumerate(ast) if x == "TOK_TABNAME"
+            ]
+            
+            with transactional_session(db.session, read_only=True) as session:
+                # From the selected tables, fetch the public status and the user access privileges
+                access = {
+                    r.relation:r
+                    for r in session.query(
+                        model.Catalog.relation,
+                        model.Catalog.is_public,
+                        func.bool_or(model.ACL.is_granted).label('is_granted')
+                    ).outerjoin(
+                        model.GroupCatalog
+                    ).outerjoin(
+                        model.Group
+                    ).outerjoin(
+                        model.ACL,
+                        (model.Group.id == model.ACL.group_id) & (model.ACL.user_id == g.session['user'].id)
+                    ).filter(
+                        model.Catalog.relation.in_(tables)
+                    ).group_by(
+                        model.Catalog.relation,
+                        model.Catalog.is_public
+                    ).all()
+                }
+            
+            for table in tables:
+                if table in access:
+                    if not access[table].is_public:
+                        if not access[table].is_granted:
+                            log.warning(
+                                'User {0} tried to access table {1} without permissions.'.format(
+                                    g.session['user'].id, table
+                                )
+                            )
+                            raise PermissionDenied
+            
+            # If it gets here, access is granted to the requested tables
             cursor.execute(sql, async=False)
+            
             finish = time.time()
             
             # col[0][2:] : Remove 't.' prefix from column names
@@ -141,7 +197,25 @@ class CatalogSyntaxItem(Resource):
                     'columns' : cols,
                 }
             }
-    
+        
+        except PermissionDenied:
+            finish = time.time()
+            
+            g.session['track']({
+                't' : 'event',
+                'ec' : 'catalogs',
+                'ea' : 'syntax_denied',
+                'el' : g.session['user'].id,
+                'ev' : int(finish-start),
+            })
+            
+            return {
+                'type' : 'syntax',
+                'error' : {
+                    'message' : "You don't have enough privileges to access one of the tables.",
+                }
+            }
+        
         except hive.OperationalError as e:
             finish = time.time()
             status = e.args[0].status

@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.4.0] - 2020-04-02
+### Added
+- Assert table access privileges at syntax check using statement AST. (Pau Tallada)
+
+
 ## [2.3.3] - 2020-02-12
 ### Changed
 - Add user info to failed query email template. (Pau Tallada)
