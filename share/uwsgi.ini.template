@@ -1,0 +1,18 @@
+[uwsgi]
+module = cosmohub.api:app
+
+master = true
+
+#http = 127.0.0.1:5000
+http-websockets = true
+socket = /srv/cosmohub/run/uwsgi.sock
+chmod-socket = 660
+
+processes = 4
+gevent = 100
+
+vacuum = true
+die-on-term = true
+
+# Increase buffer-size to allow bigger queries on GET requests
+buffer-size = 65535

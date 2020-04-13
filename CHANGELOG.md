@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Add the templates for the uwsgi and systemd control files. (Pau Tallada)
+
 ### Changed
 - Adapt to HDP 3.1 services and APIs. (Pau Tallada)
 
