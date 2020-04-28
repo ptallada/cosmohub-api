@@ -126,6 +126,7 @@ class CatalogSyntaxItem(Resource):
             database=current_app.config['HIVE_DATABASE'],
             auth='KERBEROS',
             kerberos_service_name='hive',
+            configuration={'hive.server2.proxy.user': current_app.config['DO_AS']}
         ).cursor()
         
         sql = "SELECT * FROM ( {0} ) AS t LIMIT 0".format(request.args['sql'])

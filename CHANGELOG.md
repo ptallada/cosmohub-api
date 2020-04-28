@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Adapt to HDP 3.1 services and APIs. (Pau Tallada)
+- Use a proxy user. (Pau Tallada)
 
 
 ## [2.4.0] - 2020-04-02

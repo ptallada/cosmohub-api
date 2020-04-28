@@ -70,6 +70,7 @@ class BaseDownload(object):
         client = KerberosClient(
             url=url,
             mutual_auth='OPTIONAL',
+            proxy=current_app.config['DO_AS'],
         )
         return client
 

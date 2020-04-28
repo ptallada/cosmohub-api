@@ -174,6 +174,7 @@ def catalog(ws):
             database=current_app.config['HIVE_DATABASE'],
             auth='KERBEROS',
             kerberos_service_name='hive',
+            configuration={'hive.server2.proxy.user': current_app.config['DO_AS']}
         ).cursor()
         
         sql = "SET tez.queue.name={queue}".format(

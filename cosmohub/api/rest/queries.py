@@ -61,6 +61,7 @@ class QueryCollection(Resource):
             oozie_rest = oozie.Oozie(
                 current_app.config['OOZIE_URL'],
                 database = current_app.config['HIVE_DATABASE'],
+                username = current_app.config['DO_AS'],
             )
             
             try:
@@ -132,6 +133,7 @@ def finish_query(query, status):
         database=current_app.config['HIVE_DATABASE'],
         auth='KERBEROS',
         kerberos_service_name='hive',
+        configuration={'hive.server2.proxy.user': current_app.config['DO_AS']}
     ).cursor()
     
     
@@ -159,6 +161,7 @@ def finish_query(query, status):
     client=KerberosClient(
         url=url,
         mutual_auth='OPTIONAL',
+        proxy=current_app.config['DO_AS'],
     )
     
     path = os.path.join(current_app.config['RESULTS_BASE_DIR'], str(query.id))
@@ -185,6 +188,7 @@ class QueryCancel(Resource):
         oozie_rest=oozie.Oozie(
             current_app.config['OOZIE_URL'],
             database=current_app.config['HIVE_DATABASE'],
+            username = current_app.config['DO_AS'],
         )
         @retry_on_serializable_error
         def cancel_query(id_):
@@ -216,6 +220,7 @@ class QueryDone(Resource):
         oozie_rest = oozie.Oozie(
             current_app.config['OOZIE_URL'],
             database=current_app.config['HIVE_DATABASE'],
+            username = current_app.config['DO_AS'],
         )
         
         with transactional_session(db.session) as session:
