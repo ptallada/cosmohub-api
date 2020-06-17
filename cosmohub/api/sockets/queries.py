@@ -4,7 +4,7 @@ import logging
 import requests
 import time
 
-from flask import g, current_app, request
+from flask import g, request
 from urllib import urlencode
 
 from cosmohub.api import app, db, ws
@@ -13,7 +13,6 @@ from .. import release
 from ..database import model
 from ..database.session import transactional_session
 from ..security.authentication import verify_token
-from ..hadoop import webhcat
 
 log = logging.getLogger(__name__)
 
@@ -64,12 +63,6 @@ def _init_session():
 def queries(ws):
     log.info("Opened websocket connection")
     with app.request_context(ws.environ):
-        hive_rest = webhcat.Hive(
-            url = current_app.config['WEBHCAT_BASE_URL'],
-            username = 'jcarrete',
-            database = current_app.config['HIVE_DATABASE']
-        )
-        
         try:
             msg = json.loads(ws.receive())
             
@@ -94,14 +87,6 @@ def queries(ws):
                 for query in queries:
                     new_set.add(query.id)
                     old_set.discard(query.id)
-                    
-                    status = hive_rest.status(query.job_id)
-                    progress = status["percentComplete"]
-                    percent = 0
-                    if progress:
-                        percent = int(progress[:progress.index('%')])
-                    
-                    data[query.id] = percent
                 
                 if old_set:
                     # Some tracked query has completed.

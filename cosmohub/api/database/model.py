@@ -749,7 +749,7 @@ class Query(db.Model):
     )
     job_id = Column(
         'job_id',
-        String(32),
+        String(64),
         nullable=True,
         comment='Job unique identifier (external)'
     )

@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.5.0] - 2020-06-17
+### Added
+- Add the templates for the uwsgi and systemd control files. (Pau Tallada)
+
+### Changed
+- Adapt to HDP 3.1 services and APIs. (Pau Tallada)
+
+
 ## [2.4.0] - 2020-04-02
 ### Added
 - Assert table access privileges at syntax check using statement AST. (Pau Tallada)

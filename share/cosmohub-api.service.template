@@ -1,0 +1,15 @@
+[Unit]
+Description=uWSGI instance to serve CosmoHub API
+After=network.target
+
+[Service]
+User=nginx
+Group=nginx
+WorkingDirectory=/srv/cosmohub/src/cosmohub.api
+Environment="PATH=/srv/cosmohub/bin"
+ExecStart=/usr/bin/k5start -p /srv/cosmohub/run/k5start.pid -f /srv/cosmohub/keytabs/cosmohub.keytab -U -L -K30 -v -- /srv/cosmohub/bin/uwsgi --ini uwsgi.ini
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+

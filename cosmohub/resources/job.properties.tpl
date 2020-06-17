@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+  <property>
+    <name>nameNode</name>
+    <value>${name_node}</value>
+  </property>
+  <property>
+    <name>oozie.wf.application.path</name>
+    <value>${name_node}${oozie_path}</value>
+  </property>
+  <property>
+    <name>oozie.use.system.libpath</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>jdbcPrincipal</name>
+    <value>${jdbc_principal}</value>
+  </property>
+  <property>
+    <name>oozie.wf.workflow.notification.url</name>
+    <value>${callback_url}</value>
+  </property>
+  <property>
+    <name>jobTracker</name>
+    <value>${job_tracker}</value></property>
+  <property>
+    <name>jdbcURL</name>
+    <value>${jdbc_url}</value>
+  </property>
+  <property>
+    <name>query</name>
+    <value>${query}</value>
+  </property>
+</configuration>

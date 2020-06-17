@@ -171,8 +171,9 @@ def catalog(ws):
         cursor = hive.connect(
             host=current_app.config['HIVE_HOST'],
             port=current_app.config['HIVE_PORT'],
-            username='jcarrete',
-            database=current_app.config['HIVE_DATABASE']
+            database=current_app.config['HIVE_DATABASE'],
+            auth='KERBEROS',
+            kerberos_service_name='hive',
         ).cursor()
         
         sql = "SET tez.queue.name={queue}".format(
