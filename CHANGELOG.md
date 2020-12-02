@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Changed
 - Set collection and key delimiter for complex types in CSV format. (Pau Tallada) 
+- Return column types on syntax check. (Pau Tallada)
 
 
 ## [2.5.0] - 2020-06-17
