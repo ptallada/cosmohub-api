@@ -20,7 +20,10 @@ class CsvBz2File(BaseFormat):
     )
     row_format = textwrap.dedent(
         """\
-        ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+        ROW FORMAT DELIMITED
+        FIELDS TERMINATED BY ','
+        COLLECTION ITEMS TERMINATED BY '\U003B'
+        MAP KEYS TERMINATED BY ':'
         STORED AS TEXTFILE
         """
     )

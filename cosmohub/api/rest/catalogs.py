@@ -182,7 +182,14 @@ class CatalogSyntaxItem(Resource):
             finish = time.time()
             
             # col[0][2:] : Remove 't.' prefix from column names
-            cols = [col[0][2:] for col in cursor.description]
+            cols = [
+                {
+                    'name' : col[0][2:],
+                    'type' : col[1][:-5],
+                }
+                for col in cursor.description
+            ]
+
             
             g.session['track']({
                 't' : 'event',
