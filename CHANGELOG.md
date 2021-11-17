@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.6.1] - 2021-11-17
+### Fixed
+- Filter out any non-printable characters from FITS header comments. (Pau Tallada)
+
+
 ## [2.6.0] - 2021-01-11
 ### Changed
 - Set collection and key delimiter for complex types in CSV format. (Pau Tallada) 
