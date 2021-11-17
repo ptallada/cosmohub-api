@@ -1,6 +1,7 @@
 """\
 Add a FITS header and padding to an existing stream of record array data.
 """
+import re
 import textwrap
 
 from astropy.io import fits
@@ -44,6 +45,8 @@ class FitsFile(BaseFormat):
         'VARCHAR_TYPE'   : '255A',
     }
     
+    _non_printable_re = re.compile(r'[^ -~]+')
+
     def __init__(self, fd, description, comments):
         """\
         Build the FITS header and footer
@@ -59,7 +62,7 @@ class FitsFile(BaseFormat):
         rows = self._fd_length / int(thdu.header['NAXIS1'])
         thdu.header['NAXIS2'] = rows
         for comment in comments.split('\n'):
-            thdu.header.add_comment(comment.encode('ascii', errors='replace'))
+            thdu.header.add_comment(self._non_printable_re.sub('', comment))
 
         self._header = fits.PrimaryHDU().header.tostring() + thdu.header.tostring() # @UndefinedVariable
         

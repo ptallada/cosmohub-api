@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Fixed
+- Filter out any non-printable characters from FITS header comments. (Pau Tallada)
 
 
 ## [2.6.0] - 2021-01-11
