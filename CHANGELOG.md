@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Added
+- Implement Parquet format. (Pau Tallada)
 
 
 ## [2.6.1] - 2021-11-17

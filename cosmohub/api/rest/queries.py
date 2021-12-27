@@ -18,7 +18,7 @@ from .downloads import QueryDownload
 from .. import fields
 from ..database import model
 from ..database.session import transactional_session, retry_on_serializable_error
-from ..hadoop.hdfs import HDFSPathReader
+from ..hadoop.hdfs import HDFSPathReader, HDFSParquetReader
 from ..security import auth_required, Privilege, Token
 from ..hadoop import oozie
 
@@ -165,7 +165,10 @@ def finish_query(query, status):
     if not path.startswith('/'):
         path = os.path.join(client.get_home_directory(), path)
     
-    reader = HDFSPathReader(client, path)
+    if query.format == 'parquet':
+        reader = HDFSParquetReader(client, path)
+    else:
+        reader = HDFSPathReader(client, path)
     
     context = {
         'query' : query,
