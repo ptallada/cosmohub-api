@@ -189,29 +189,18 @@ class HDFSParquetReader(HDFSPathReader):
         Those parameters are needed to calculate the final size of the stream or
         to be able to seek inside the stream.
         """
-        self._header = b''
-        self._footer = b''
-        
         self._length = 0
         self._position = 0
         self._all_files = collections.deque()
         
-        fmd_merged = None
+        self._filemetadata = None
         offset = 0
 
         status = self._client.status(self._path)
         if status['type']=='FILE' and status['length']>0:
-            self._all_files.append({
-                'name': os.path.basename(self._path),
-                'length': status['length'],
-                'offset': 0,
-            })
-            self._path = os.path.dirname(self._path)
-            self._length = status['length']
+            raise NotImplementedError()
 
         else:
-            self._header = b'PAR1'
-
             for _, entry in self._client.list(self._path, status=True):
                 if entry['type'] != 'FILE' or entry['length']==0:
                     continue
@@ -225,9 +214,9 @@ class HDFSParquetReader(HDFSPathReader):
                     tfmd = parquet_thrift.FileMetaData()
                     tfmd.read(tprot)
                     
-                    if fmd_merged is None:
-                        fmd_merged = copy.deepcopy(tfmd)
-                        offset += entry['length'] - fmd_len -12
+                    if self._filemetadata is None:
+                        self._filemetadata = copy.deepcopy(tfmd)
+                        offset += entry['length'] - fmd_len - 12
                     else:
                         for rg in tfmd.row_groups:
                             rg = copy.deepcopy(rg)
@@ -236,8 +225,8 @@ class HDFSParquetReader(HDFSPathReader):
                                     c.file_offset += offset
                                 if c.meta_data.data_page_offset:
                                     c.meta_data.data_page_offset += offset
-                            fmd_merged.row_groups.append(rg)
-                        offset += entry['length'] - fmd_len -12
+                            self._filemetadata.row_groups.append(rg)
+                        offset += entry['length'] - fmd_len - 12
                 
                 self._all_files.append({
                     'name': entry['pathSuffix'],
@@ -246,10 +235,4 @@ class HDFSParquetReader(HDFSPathReader):
                 })
                 self._length += entry['length'] - fmd_len - 12
             
-            tmem = TMemoryBuffer()
-            tprot = TCompactProtocol(tmem)
-            fmd_merged.write(tprot)
-            self._footer = tmem.getvalue()
-            self._footer += struct.pack('<i', len(self._footer)) + b'PAR1'
-        
         self._current_files = copy.deepcopy(self._all_files)
