@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.7.0] - 2022-01-10
+### Added
+- Implement Parquet format. (Pau Tallada)
+- Patch comments and column names in Parquet format. (Pau Tallada)
+
+
 ## [2.6.1] - 2021-11-17
 ### Fixed
 - Filter out any non-printable characters from FITS header comments. (Pau Tallada)

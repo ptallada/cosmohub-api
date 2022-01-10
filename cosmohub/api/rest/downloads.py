@@ -17,7 +17,7 @@ from cosmohub.api import db, api_rest
 from ..database import model
 from ..database.session import transactional_session
 from ..security import auth_required, Privilege
-from ..hadoop.hdfs import HDFSPathReader
+from ..hadoop.hdfs import HDFSPathReader, HDFSParquetReader
 
 def create_content_range(range_header, length):
     if not range_header:
@@ -261,7 +261,10 @@ class QueryDownload(BaseDownload, Resource):
             range_header = request.headers.get('Range', None)
             client = self._create_client()
             path = self._get_path(query)
-            reader = HDFSPathReader(client, path)
+            if query.format == 'parquet':
+                reader = HDFSParquetReader(client, path)
+            else:
+                reader = HDFSPathReader(client, path)
             
             context = {
                 'query' : query,

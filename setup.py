@@ -53,6 +53,7 @@ setup(
         'sasl',
         'sqlalchemy',
         'sqlalchemy-utils',
+        'thriftpy2',
     ],
     
     include_package_data=True,
@@ -66,6 +67,7 @@ setup(
             'csv.bz2 = cosmohub.api.io.format.csv_bz2:CsvBz2File',
             'fits    = cosmohub.api.io.format.fits:FitsFile',
             'asdf    = cosmohub.api.io.format.asdf:AsdfFile',
+            'parquet = cosmohub.api.io.format.parquet:ParquetFile',
         ]
     },
 )
