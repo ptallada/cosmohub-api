@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.7.1] - 2022-12-22
+### Added
+ - Add warning note about Parquet download delays. (Pau Tallada)
+
+
 ## [2.7.0] - 2022-01-10
 ### Added
 - Implement Parquet format. (Pau Tallada)
