@@ -7,6 +7,8 @@ Your catalog request (#{{ query.id }}) has been produced as requested:
  - size: {{ humanize.naturalsize(query.size, binary=True) }}
  - format: {{ query.format }}
 
+Note: Parquet files may take up to 10 minutes to start downloading. Please be patient while your download starts.
+
 It is available for download at:
 
 {{ url }}
