@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Fixed
+ - Set reply-to header to sender address in contact form to workaround relay. (Pau Tallada)
 
 
 ## [2.7.1] - 2022-12-22

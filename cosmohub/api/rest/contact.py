@@ -18,6 +18,7 @@ class Contact(Resource):
         
         mail.send_message(
             sender = attrs['email'],
+            reply_to = attrs['email'],
             subject = attrs['subject'],
             recipients = ['cosmohub@pic.es'],
             body = attrs['message'],
