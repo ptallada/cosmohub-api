@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.7.2] - 2023-02-28
+### Fixed
+ - Set reply-to header to sender address in contact form to workaround relay. (Pau Tallada)
+
+
 ## [2.7.1] - 2022-12-22
 ### Added
  - Add warning note about Parquet download delays. (Pau Tallada)
