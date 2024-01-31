@@ -17,6 +17,7 @@ class FitsFile(BaseFormat):
         """\
         SET hive.exec.compress.output=false;
         SET mapreduce.output.fileoutputformat.compress=false;
+        SET hive.merge.tezfiles=false;
         """
     )
     row_format = textwrap.dedent(

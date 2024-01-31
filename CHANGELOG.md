@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased][unreleased]
+### Fixed
+ - Disable `hive.merge.tezfiles` for FITS format, as we lack the InputFormat. (Pau Tallada)
 
 
 ## [2.7.2] - 2023-02-28
