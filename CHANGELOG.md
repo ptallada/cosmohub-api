@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 
 
+## [2.7.3] - 2024-01-31
+### Fixed
+ - Disable `hive.merge.tezfiles` for FITS format, as we lack the InputFormat. (Pau Tallada)
+
+
 ## [2.7.2] - 2023-02-28
 ### Fixed
  - Set reply-to header to sender address in contact form to workaround relay. (Pau Tallada)
